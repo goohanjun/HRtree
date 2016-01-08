@@ -8,16 +8,33 @@
 #ifndef SRC_COMMAND_H_
 #define SRC_COMMAND_H_
 
-#include "Node.h"
+#include "HNode.h"
+#include "RootTable.h"
+#include "Verify.h"
+#include <set>
+using namespace std;
+
+int CommandInsert(HNode* root, double* key, int data, int dlen, RootTable* RootTable);
+int CommandDelete(HNode* root, double* key, int data, int dlen, RootTable* RootTable);
+int CommandSearch(HNode* root, double* key, int data, int dlen, RootTable* RootTable);
+
+/*
+ * Verification
+ */
+
+//Verify the structure of the Tree.
+bool CommandVerifyTree(RootTable *RT);
+bool VerifyRootNode(HNode* HNode, int currentTime);
+bool Verify(HNode* HNode, int currentTime);
+
+//Verify the answer set with object id.
+bool CommandVerifyAnswer(RootTable *RT, set<int>* answers[],int ElapsedTime);
+void _SearchObject(HNode *Node, set<int>* object, int currentTime);
+bool _CompareSet(set<int>* answer, set<int>* object);
 
 
-int CommandInsert(Node* root, double* key, int klen, int data, int dlen, Node* Root[], int & numRoot);
-int CommandDelete(Node* root, double* key, int klen, int data, int dlen, Node* Root[], int & numRoot);
-int CommandSearch(Node* root, double* key, int klen, int data, int dlen, Node* Root[], int & numRoot);
-void CommandNewRoot();
-void CommandPrint(Node* node);
-void CommandDump(Node* node);
-
-
-
+bool CommandVerify(RootTable *RT, set<int>* answers[],int ElapsedTime);
+void CommandDump(HNode* HNode);
+void CommandView(RootTable *RT);
+void CommandPrint(HNode* HNode);
 #endif /* SRC_COMMAND_H_ */

@@ -7,236 +7,979 @@
 
 #include "Extension.h"
 
+using namespace std;
 
-int Insert(Node* root, double* key, int klen, int data, int dlen, Node* Root[], int & numRoot){
-	//cout<<"Insertion Start!"<<endl;
+int Insert(HNode* root, double* key, int data, int dlen, RootTable* RT) {
 
-	//Root가 Leaf노드가 아니고, Root노드 아래가 다 닫혀있다면, 새로운 루트를 생성해야한다! (Deletion때문에 발생 가능)
-	bool flag_alive = false; //죽어있다고 가정.
-	if (root->level !=1){
-		if(root->_numAlive(key[4]) != 0){
-			flag_alive = true;
-		}
-		if(flag_alive==false)
+	stack *Stack = new stack();
+	HNode *leaf, *nNode1, *nNode2;
+	int status = 0;
+	double tnow = key[4]; //
+
+	if (root->level != 1) { //Root가 Leaf노드가 아니고, Root노드 아래가 다 닫혀있다면, 새로운 루트를 생성해야한다! (Deletion때문에 발생 가능)
+		if (root->_numAlive(key[4]) == 0)
 			return 0;
 	}
 
-	Node *Path[MAX_DEPTH_SIZE]={};
-	int trace[MAX_DEPTH_SIZE]={};
-	int numTrace=0;
+	hr_rect *rect = new hr_rect(root->bp, 0); // change bp of root with key
+	rect->expand(key);
+
+	leaf = _ChooseSubtree(root, Stack, key, data);
+
+	//Debug
+	if (isPrintPath)
+		_printStack(Stack);
+
+	// Insert object in a leaf node
+	memcpy(&leaf->entries[leaf->numEntry].data, &data, dlen);
+	memcpy(leaf->entries[leaf->numEntry].bp, key, klen);
+	leaf->entries[leaf->numEntry].dlen = dlen;
+	leaf->numEntry++;
+
+	_TreatOverflow(leaf, Stack, nNode1, nNode2, status, RT, tnow);
+
+	delete Stack;
+
+	return 1;
+}
+
+int Delete(HNode* root, double* key, int data, int dlen, RootTable* RT) {
+
+	HNode *leaf, *nNode1, *nNode2;
+	stack *Stack = new stack();
 	int status = 0;
+	int numEnt = 0;
+	double currentTime = key[5]; // || key[4];
 
-	_Path(root, Path, trace, numTrace, key,klen); // Path와 Trace, numTrace 가 채워짐!
+	if (!_FindLeaf(root, leaf, Stack, key, data)) { //Find a leaf node to delete the object from
+		cout << "Deletion Failed. No such object in the tree" << endl;
+		return 0;
+	}
+	_printStack(Stack);
 
-	Node *leaf = Path[numTrace]; //leaf 노드 설정
-	Node *node1,*node2,*node3,*node4;
-	int depth =numTrace;
-	bool bpChanged= false;
-	bool check = true;
-
-	for(int i =0;i<leaf->numEntry;i++){//만약 Entry들이 다 같은 시간대에 만들어진 거라면. true
-		if(leaf->entries[i].bp[4] < key[4]){
-			check = false;
-			break;
-		}
-	}//다 시간이 같으면 check = true;
-
-
-	if(leaf->numEntry   <  numEnt_MAX){ // Overflow 가 나질 않아서 Insert Leaf 후 UpdateParent 부르고 끝남
-		//cout<<"Insertion without Split"<<endl;
-
-		memcpy( leaf->entries[leaf->numEntry].bp, key, klen);
-		leaf->entries[leaf->numEntry].pos = true;
-		leaf->entries[leaf->numEntry].data= data;
-		leaf->entries[leaf->numEntry].dlen= dlen;
-		leaf->numEntry++;
-
-		hr_rect r1 ( leaf->bp ,klen);//현재 BP
-		double temp_start = leaf->bp[4];
-
-
-		if(r1.expand(key)){ //살아있는 애들의 BP만 저장되어있다고 생각하자!
-			bpChanged= true;
-			memcpy(leaf->bp, r1.coord, klen);
-		}
-
-		//Status 스플릿 없이 만약 시간이 바뀐데다가 비피까지 바뀌면, 새로운 애를 넣어주어야함
-		if ( !check  &&  bpChanged ){ //이래야 새로운게 추가 될 일말의 가능성이라도 있음ㅇㅇㅇ
-			status = 1;
-		}
-		r1.dealloc();
-
-		if (!leaf->isRoot && bpChanged ){
-			//Path[depth] = leaf node
-			//Path[--depth] = leaf node's parent.
-			depth--;
-			Path[depth]->_UpdateParent(Path, trace, depth, numTrace, status, leaf, node2,Root, numRoot, key[4]);
-		}
+	if(leaf->_numAlive() < UF_Ratio * MaxEntry){
+		_TreatUnderflow();
 	}
 
-	//Todo: 여기서부터 Bp가 살아있는 것들만 저장하는 애인걸 신경써주면 된다!
+	for (int i = 0; i < root->level; i++) {
+		//TODO
 
-	else{ //Overflow!!
-		int rightEntries[numEnt_MAX]={},leftEntries[numEnt_MAX]={};
-		int numRight=0,numLeft=0, numKey=1;
-		int SStatus; //Split Status // 1= key, 2 =version , 3= key without key (SVO)
-		bool oneGoesRight=false,twoGoesRight=false;
-		double *rkey = new double[dim*2];
-		double *lkey = new double[dim*2];
-
-		int depth = numTrace-1; //부모로 올라갈거라 미리 1을 빼준다
-
-		if(check){ // key Split
-			cout<<"KeySplit!"<<endl;
-			SStatus = 1; // key Split for _SplitNode
-			status = 2;//for UpdateParent
-			leaf->_Ksplit(numKey, key,key,oneGoesRight,twoGoesRight,rightEntries, numRight, rkey, lkey);
-			leaf->_SplitNode(rkey,lkey, rightEntries, numRight, leftEntries ,numLeft,
-							SStatus, Root, numRoot, node1, node2,leaf);
-			//오른쪽에 갈까 ? 왼쪽에 갈까?
-			if(oneGoesRight){
-				memcpy(node2->entries[node2->numEntry].bp,key, klen);
-				node2->entries[node2->numEntry].data=data;node2->entries[node2->numEntry].dlen=dlen;
-				node2->entries[node2->numEntry].pos=true;
-				node2->numEntry++;
-			}
-			else{
-				memcpy(node1->entries[node1->numEntry].bp,key, klen);
-				node1->entries[node1->numEntry].data=data;node1->entries[node1->numEntry].dlen=dlen;
-				node1->entries[node1->numEntry].pos=true;
-				node1->numEntry++;
-			}
-			//cout<<"KeySplit Over"<<endl;
-		}
-		else{ //Version Split
-			cout<<"VersionSplit!"<<endl;
-			SStatus = 2; // version Split for _SplitNode
-			status = 3;//for UpdateParent
-			leaf->_Vsplit(numKey,key,key, rkey,lkey,rightEntries,numRight,leftEntries,numLeft);
-			leaf->_SplitNode(rkey,lkey, rightEntries, numRight, leftEntries ,numLeft,
-				SStatus, Root, numRoot, node1, node2,leaf);
-
-			if(!leaf->isRoot){
-				Path[depth]->_deleteParent(trace, depth, key[4]);//부모에게서, 중복된 필요없는 엔트리를 제거해준다.
-			}
-			if( node2->numEntry >= 0.85 * numEnt_MAX){//SVO
-				cout<<"Insertion LEAF_SVO"<<endl;
-				numKey = 1;numRight = 0;
-				status = 4;//for UpdateParent
-				SStatus = 1; // key Split for _SplitNode
-				node2->_Ksplit(numKey,key,key,oneGoesRight,twoGoesRight,rightEntries, numRight,rkey,lkey);
-				node2->_SplitNode(rkey,lkey, rightEntries, numRight, leftEntries ,numLeft,
-								SStatus, Root, numRoot, node3, node4,node2);
-
-				if(oneGoesRight){
-					memcpy(node4->entries[node4->numEntry].bp, key, klen);
-					node4->entries[node4->numEntry].data=data;node4->entries[node4->numEntry].dlen=dlen;
-					node4->entries[node4->numEntry].pos=true;
-					node4->numEntry++;
-				}else{
-					memcpy(node3->entries[node3->numEntry].bp, key, klen);
-					node3->entries[node3->numEntry].data=data;node3->entries[node3->numEntry].dlen=dlen;
-					node3->entries[node3->numEntry].pos=true;
-					node3->numEntry++;
-				}
-			}
-			else{
-				//VersionSplit without SVO , 무조건 오른쪽에 넣어주면 된다.
-				memcpy(node2->entries[node2->numEntry].bp,key, klen);
-				node2->entries[node2->numEntry].data=data;node2->entries[node2->numEntry].dlen=dlen;
-				node2->entries[node2->numEntry].pos=true;
-				node2->numEntry++;
-			}
-		}
-
-		delete [] rkey;
-		delete [] lkey;
-		if(!leaf->isRoot){
-			if(status==4) // SVO
-				Path[depth]->_UpdateParent(Path, trace, depth ,numTrace, status, node3, node4,Root, numRoot,key[4]); //leaf노드의 아빠
-			else // key split || version Split
-				Path[depth]->_UpdateParent(Path, trace, depth ,numTrace, status, node2, node1,Root, numRoot,key[4]); //leaf노드의 아빠
-		}//node2 =새로 나온거, node1 원래 자신//먼저 넣어주어야 하는것 순서대로 넣자 노드2 -> 노드 1
+		//_TreatOverflow(leaf, Stack, nNode1, nNode2, status, RT, currentTime);
+		//_TreatUnderflow();
 	}
-	cout<<"Insertion is Over"<<endl;
+
+	if (status == 1 || status == 2)
+		numEnt = 1;
+	else if (status == 3)
+		numEnt = 2;
+
+	if (root->numEntry + numEnt > MaxEntry) { // Root Overflow then try VersionSplit
+		pCursor *cursor = new pCursor();
+		_versionSplitNode(RT, cursor, root, nNode1, currentTime);
+		delete cursor;
+	}
+
+	delete Stack;
 	return 1;
 }
 
-int Delete(Node* root, double* key, int klen, int data, int dlen, Node* Root[], int & numRoot){
-	return 1;
-}
-
-
-
-int Search(Node* self, double* key, int klen, int data, int dlen, Node* Root[], int & numRoot){
-	for(int i =0;i< self->numEntry;i++){
-		if( self->level == 1){
-			cout<<"Searched data = "<<self->entries[i].data<< endl;
+int Search(HNode* self, double* key, int data, int dlen, HNode* Root[],
+		int & numRoot) {
+	for (int i = 0; i < self->numEntry; i++) {
+		if (self->level == 1) {
+			cout << "Searched data = " << self->entries[i].data << endl;
 			return 1;
 		}
-		if (_Consistent(self->entries[i].child->bp, key,klen))
-			Search (self->entries[i].child, key,klen, data, dlen,Root,numRoot);
+		if (_Consistent(self->entries[i].child->bp, key))
+			Search(self->entries[i].child, key, data, dlen, Root, numRoot);
 	}
 	return 1;
 }
-int _Path(Node* self, Node* Path[], int trace[], int& numTrace, double* key, int klen){
-	if (self->level==1){
-		Path[numTrace]= self;
-		trace[numTrace] = 0;
-		return 0;
-	}
-	else{
-		int index;
-		if(self->level==2)
-			index = self->_findMinPenOver(key);
+
+//Deletion
+bool _FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key, int data) {
+	// Reached to Leaf Node
+	if (Node->level == 1) {
+		int index = 0;
+		int numAlive = 0;
+		bool flag= true;
+		bool isExist = false;
+		hr_rect newBP;
+		for (int i = 0; i < Node->numEntry; i++) {
+			if (Node->entries[i].data == data){
+				index = i;
+				isExist = true;
+			}
+			else if (Node->entries[i].bp[5] == DBL_MAX) { // Alive Entry
+				numAlive++;
+				if (flag){
+					newBP.copyRect(Node->entries[i].bp);
+					flag = false;
+				}
+				else
+					newBP.expand(Node->entries[i].bp);
+			}
+		}
+		if( isExist == false){
+			newBP.dealloc();
+			return false;
+		}
+		// Physical Deletion
+		if(Node->entries[index].bp[4] == key[5]){
+			if(index != (Node->numEntry-1))
+				memcpy(&Node->entries[index], &Node->entries[Node->numEntry-1], sizeof(Entry));
+			Node->numEntry--;
+		}
+		// Logical Deletion
 		else
-			index = self->_findMinPen(key);
-		trace[numTrace]= index;
-		Path[numTrace] = self; //자기 자신을 넣고, 몇번째 아이로 가는지도 넣고!
-		numTrace++;
-		_Path( self->entries[index].child , Path, trace, numTrace,key, klen);
+			Node->entries[index].bp[4] = key[5];
+
+		if (!newBP.isEqual(Node->bp)) {
+			Stack->isChanged[0] = true;
+			memcpy(Node->bp, newBP.coord, klen);
+		}
+
+		if(Node->isRoot && Node->level ==1){ // When Root is a leaf node, Root can be closed.
+			if(numAlive==0)
+				Node->bp[5] = key[5]; // Close the Root
+		}
+		leaf = Node;
+		Stack->trace[0] = Node;
+
+		newBP.dealloc();
+		return true;
 	}
-	return 0; //for removing warning
+
+	hr_rect keyRect;
+	keyRect.copyRect(key);
+	// Non-leaf Nodes
+	for (int i = 0; i < Node->numEntry; i++) {
+		if (Node->entries[i].bp[5] == DBL_MAX && keyRect.isIncluded(Node->entries[i].bp)) { // Alive Entry which include key's BP
+			if(_FindLeaf(Node->entries[i].child, leaf, Stack, key, data)){
+
+				if(Node->entries[i].bp[4] < key[5] && Stack->isChanged[Node->level-2] ){ // Insert new entry e' and close e
+					// close e
+					Node->entries[i].bp[5] = key[5];
+					// make e'
+					memcpy(&Node->entries[Node->numEntry] , &Node->entries[i], sizeof(Entry));
+					memcpy(Node->entries[Node->numEntry].bp, Node->entries[i].child->bp, klen);
+					Node->entries[Node->numEntry].bp[4] = key[5];
+					Node->numEntry++;
+				}
+				else if (Stack->isChanged[Node->level-2]){ // Just update e's BP
+					memcpy(Node->entries[i].bp, Node->entries[i].child->bp, klen);
+				}
+
+				hr_rect newBP;
+				bool flag = true;
+				for (int j = 0; j < Node->numEntry; j++) {
+					if (Node->entries[i].bp[5] == DBL_MAX) {
+						if (flag) {
+							newBP.copyRect(Node->entries[j].bp);
+							flag = false;
+						} else
+							newBP.expand(Node->entries[j].bp);
+					}
+				}
+
+				Stack->choice[Node->level-1] = i;
+				if(!newBP.isEqual(Node->bp)){
+					Stack->isChanged[Node->level-1] = true;
+					memcpy(Node->bp, newBP.coord,klen);
+				}
+
+				newBP.dealloc();
+				return true;
+			}
+		}
+	}
+	keyRect.dealloc();
+	return false;
 }
 
+int _TreatUnderflow() {
+	return 1;
+}
 
+int _Deletion_ApplyChanges() {
+	return 1;
+}
 
+//Insertion
+HNode* _ChooseSubtree(HNode* self, stack* st, double* key, int data) {
 
+	int index;
+	bool bpChanged;
 
+	if (isPrintPath)
+		_printNode(self);
 
-int _Consistent(double *bp,double *key, int klen){
-	hr_rect r1(bp, klen);
-	hr_rect r2(key, klen);
-	if(r1.intersect(&r2)){
-		r1.dealloc();r2.dealloc();
-		return 1;
+	if (self->level == 1) {
+		// Put leaf node in a stack
+		hr_rect *rect1 = new hr_rect(self->bp, 0);
+		rect1->expand(key);
+
+		st->depth = st->curr;
+		st->trace[st->curr] = self;
+		st->isChanged[st->curr] = true;
+		st->choice[st->curr] = 0;
+
+		return self;
+	} else if (self->level == 2)
+		index = self->_findMinPenOver(key);
+	else
+		index = self->_findMinPen(key);
+
+	//Debug
+	if (isPrintPath)
+		cout << "Extension:: _ChooseSubtree index = " << index << endl;
+
+	hr_rect bpRect(self->bp, 0);
+	bpRect.expand(key);
+
+	hr_rect rect;
+	rect.copyRect(self->entries[index].bp);
+	bpChanged = rect.expand(key); // Don't change the bp. Just check whether there is a change or not
+	rect.dealloc();
+
+	if (self->entries[index].bp[4] < key[4] && bpChanged) { // Copy e to e' when MBR is changed
+		//cout<<"Extension::_ChooseSubtree case 1"<<endl;
+
+		memcpy(&self->entries[self->numEntry], &self->entries[index],
+				sizeof(Entry));
+		hr_rect *rect2 = new hr_rect(self->entries[self->numEntry].bp, 0);
+		rect2->expand(key); // Expand the intermediate node's BPs with new key
+
+		self->entries[self->numEntry].bp[4] = key[4]; // Change the start time of e'
+		self->entries[index].bp[5] = key[4]; // Change the end time of e
+
+		st->choice[st->curr] = self->numEntry; // New key will go into this place
+		self->numEntry++;
+		st->trace[st->curr] = self;
+		st->isChanged[st->curr] = true;
+		st->curr++;
+	} else {
+		//cout<<"Extension::_ChooseSubtree case 2"<<endl;
+
+		hr_rect *rect2 = new hr_rect(self->entries[index].bp, 0);
+		rect2->expand(key); // Expand the intermediate node's BPs with new key
+
+		st->choice[st->curr] = index; // New key will go into this place
+		st->trace[st->curr] = self;
+		st->curr++;
 	}
-	else{
-		r1.dealloc();r2.dealloc();
+
+	return _ChooseSubtree(self->entries[index].child, st, key, data);
+}
+
+/* Treat Overflow
+ * Check whether the node is fulled or not
+ * If it is not,
+ * Then call _TreatOverflow for parent node.
+ *
+ * It it is,
+ * Then, decide between KeySplit and VersionSplit.
+ *
+ */
+int _TreatOverflow(HNode* self, stack* Stack, HNode*& nNode1, HNode*& nNode2,
+		int& status, RootTable* RT, double tnow) {
+
+	if (isPrintOverflow)
+		cout << "Extension::_TreatOverflow";
+	bool isOverflow = false;
+	HNode *newNode1, *newNode2;
+	int numKey = 0;
+	if (status == 1 || status == 2) // KeySplit || VersionSplit
+		numKey = 1;
+	else if (status == 3) // Strong Version Split
+		numKey = 2;
+
+	//KeySplit BP Update
+	if (status == 1) {
+		memcpy(self->entries[Stack->choice[Stack->curr]].bp,
+				self->entries[Stack->choice[Stack->curr]].child->bp, klen);
+	}
+	//VersionSplit BP Update
+	if (status == 2 || status == 3) { // Remove the entry which is not correct due to the split of child.
+		_RemoveEntry(self, Stack, tnow);
+	}
+
+	if (self->numEntry + numKey + 1 > MaxEntry)
+		isOverflow = true;
+
+	if (!isOverflow) {
+		if (isPrintOverflow)
+			cout << " Fit-in, level = " << self->level << endl;
+		status = 0;
+		if (numKey == 1) { //Insert new entry from child's Split
+			self->entries[self->numEntry].child = nNode1;
+			memcpy(self->entries[self->numEntry].bp, nNode1->bp, klen);
+			self->numEntry++;
+		} else if (numKey == 2) { //Insert new entry from child's Split
+			self->entries[self->numEntry].child = nNode1;
+			self->entries[self->numEntry + 1].child = nNode2;
+			memcpy(self->entries[self->numEntry].bp, nNode1->bp, klen);
+			memcpy(self->entries[self->numEntry + 1].bp, nNode2->bp, klen);
+			self->numEntry++;
+			self->numEntry++;
+		}
+	} else { //Overflow
+		if (isPrintOverflow)
+			cout << " Overflow, level = " << self->level << endl;
+		bool isKeySplit = true;
+		int numRight = 0;
+		double rkey[dim * 2];
+		double lkey[dim * 2];
+
+		//Init the cursor.
+		pCursor *cursor = new pCursor(); //
+		cursor->InsertNode(self);
+		if (numKey > 0)
+			cursor->InsertEntry(nNode1); // put entry into cursor
+		if (numKey == 2)
+			cursor->InsertEntry(nNode2); // put entry into cursor
+		int rightEntries[cursor->size];
+
+		isKeySplit = _isKeySplit(cursor, tnow);
+
+		if (isKeySplit) { //KeySplit
+			if (isPrintOverflow)
+				cout << "Extension::_TreatOverflow Key Split" << endl;
+			status = 1;
+			_keySplit(cursor, rightEntries, numRight, rkey, lkey);
+			_keySplitNode(self, cursor, rightEntries, numRight, newNode1, rkey,
+					lkey);
+		} else { // VersionSplit
+			if (cursor->numAliveEntry() < MaxEntry * SVO_Ratio) {
+				if (isPrintOverflow)
+					cout << "Extension::_TreatOverflow Version Split" << endl;
+				_versionSplitNode(RT, cursor, self, newNode1, tnow);
+				status = 2;
+			} else { // Strong Version Overflow. Do the KeySplit
+				if (isPrintOverflow)
+					cout << "Extension::_TreatOverflow SVO" << endl;
+				_SVOSplitNode(RT, cursor, self, newNode1, newNode2, tnow);
+				status = 3;
+			}
+		}
+		delete cursor;
+	}
+	//Debug
+	if (isPrintOverflow) {
+		if (status == 0)
+			_printNode(self);
+		else if (status == 2 || status == 1) {
+			_printNode(self);
+			_printNode(newNode1);
+		} else if (status == 3) {
+			_printNode(self);
+			_printNode(newNode1);
+			_printNode(newNode2);
+		}
+	}
+	if (self->isRoot != true) {
+		Stack->curr--;
+		return _TreatOverflow(Stack->trace[Stack->curr], Stack, newNode1,
+				newNode2, status, RT, tnow); // Call Parent's with newNode2 (which is newly created)
+	}
+	if (isPrintOverflow)
+		cout << "Extension::_TreatOverflow Over" << endl;
+	return 1;
+}
+
+void _RemoveEntry(HNode *self, stack *Stack, double tnow) {
+	if (self->entries[Stack->choice[Stack->curr]].bp[4] == tnow) { //Need to delete the entry.
+		if (Stack->choice[Stack->curr] == (self->numEntry - 1)) {
+			self->numEntry--;
+		} else {
+			memcpy(&self->entries[Stack->choice[Stack->curr]],
+					&self->entries[self->numEntry - 1], sizeof(Entry));
+			self->numEntry--;
+		}
+	} else
+		self->entries[Stack->choice[Stack->curr]].bp[5] = tnow;
+}
+
+void _versionSplitNode(RootTable* RT, pCursor *cursor, HNode* self,
+		HNode*& newNode, double currentTime) {
+
+	int rightE[cursor->size];
+	int leftE[cursor->size];
+	int nR = 0, nL = 0;
+
+	for (int i = 0; i < cursor->size; i++) {
+		if (cursor->entries[i].bp[5] == DBL_MAX) { // 살아있는 애들은 오른쪽
+			rightE[nR] = i;
+			nR++;
+		}
+		if (cursor->entries[i].bp[4] < currentTime) { //늙은애들은 왼쪽
+			leftE[nL] = i;
+			nL++;
+		}
+	}
+
+	//Debug
+	if (nR == 0) {
+		cursor->printCursor();
+		cerr << "Extension::_versionSplitNode nR == 0 " << endl;
+	}
+	if (nL == 0) {
+		cursor->printCursor();
+		cerr << "Extension::_versionSplitNode nL == 0" << endl;
+	}
+
+	hr_rect rightRect, leftRect;
+	rightRect.copyRect(cursor->entries[rightE[0]].bp);
+	leftRect.copyRect(cursor->entries[leftE[0]].bp);
+
+	for (int i = 1; i < nR; i++) {
+		rightRect.expand(cursor->entries[rightE[i]].bp);
+	}
+	for (int i = 1; i < nL; i++) {
+		leftRect.expand(cursor->entries[leftE[i]].bp);
+	}
+
+	rightRect.coord[4] = currentTime; // 시작 시간 변경해주고
+	leftRect.coord[5] = currentTime; // 원래 있던 애들은 닫아주고
+
+	if (self->isRoot == true) {
+		if (isPrintSplit)
+			cout << "Extension::_versionSplitNode Root Version Split" << endl;
+		RT->Root[RT->numRoot] = new HNode();
+		RT->Root[RT->numRoot]->isRoot = true;
+		RT->Root[RT->numRoot]->level = self->level;
+
+		for (int i = 0; i < nL; i++) { //옮겨담으면서 시간을 닫아주자!
+			memcpy(&self->entries[i], &cursor->entries[leftE[i]],
+					sizeof(Entry));
+			if (self->entries[i].bp[5] == DBL_MAX)
+				self->entries[i].bp[5] = currentTime;
+		}
+		for (int i = 0; i < nR; i++) {
+			memcpy(&RT->Root[RT->numRoot]->entries[i],
+					&cursor->entries[rightE[i]], sizeof(Entry));
+			RT->Root[RT->numRoot]->entries[i].bp[4] = currentTime;
+		}
+
+		self->numEntry = nL;
+		RT->Root[RT->numRoot]->numEntry = nR;
+
+		memcpy(self->bp, leftRect.coord, klen);
+		memcpy(RT->Root[RT->numRoot]->bp, rightRect.coord, klen);
+
+		newNode = RT->Root[RT->numRoot]; //for Output
+		RT->numRoot++;
+
+	} else {
+		if (isPrintSplit)
+			cout << "Extension::_versionSplitNode Intermediate Version Split"
+					<< endl;
+		HNode *right = new HNode();
+		right->level = self->level;
+
+		for (int i = 0; i < nL; i++) { //옮겨담으면서 시간을 닫아주자!
+			memcpy(&self->entries[i], &cursor->entries[leftE[i]],
+					sizeof(Entry));
+			if (self->entries[i].bp[5] == DBL_MAX)
+				self->entries[i].bp[5] = currentTime; //시간을 닫아주는것 !!
+
+			if (isPrintSplit) {
+				cout << "Left Key=";
+				for (int q = 0; q < dim * 2; q++)
+					cout << self->entries[i].bp[q] << " ";
+				cout << endl;
+			}
+		}
+
+		for (int i = 0; i < nR; i++) {
+			memcpy(&right->entries[i], &cursor->entries[rightE[i]],
+					sizeof(Entry));
+			right->entries[i].bp[4] = currentTime; //시작시간은 요렇게!
+			if (isPrintSplit) {
+				cout << "Right Key=";
+				for (int q = 0; q < dim * 2; q++)
+					cout << self->entries[i].bp[q] << " ";
+				cout << endl;
+			}
+		}
+
+		memcpy(self->bp, leftRect.coord, klen);
+		memcpy(right->bp, rightRect.coord, klen);
+		self->numEntry = nL;
+		right->numEntry = nR;
+
+		if (isPrintSplit) {
+			cout << "Right Key=" << nR << " ";
+			for (int q = 0; q < dim * 2; q++)
+				cout << rightRect.coord[q] << " ";
+			cout << endl << "Left Key=" << nL << " ";
+			for (int q = 0; q < dim * 2; q++)
+				cout << leftRect.coord[q] << " ";
+			cout << endl;
+		}
+
+		newNode = right; //right이 최근꺼!
+	}
+}
+
+void _SVOSplitNode(RootTable* RT, pCursor *cursor, HNode* self,
+		HNode*& newNode1, HNode*& newNode2, double currentTime) {
+
+	pCursor *kcursor = new pCursor();
+	hr_rect leftRect;
+	int nL = 0;
+	// Do the version Split part of SVO
+	// make a closed node (self) and make a kcursor for further keySplit.
+	for (int i = 0; i < cursor->size; i++) {
+		if (cursor->entries[i].bp[5] == DBL_MAX) { // 살아있는 노드는 새로운 커서에 , KeySplit 용
+			memcpy(&kcursor->entries[kcursor->size], &cursor->entries[i],
+					sizeof(Entry));
+			kcursor->entries[kcursor->size].bp[4] = currentTime;
+			kcursor->size++;
+		}
+		if (cursor->entries[i].bp[4] < currentTime) { // 오래전 만들어진 노드는 왼쪽, Deletion 된 노드에 들어갈 Entry들
+			if (nL == 0)
+				leftRect.copyRect(cursor->entries[i].bp);
+			else {
+				leftRect.expand(cursor->entries[i].bp);
+			}
+			memcpy(&self->entries[nL], &cursor->entries[i], sizeof(Entry));
+			if (self->entries[nL].bp[5] == DBL_MAX)
+				self->entries[nL].bp[5] = currentTime;
+			nL++;
+		}
+	}
+	memcpy(self->bp, leftRect.coord, klen);
+	// Close the node (self)
+	self->bp[5] = currentTime;
+	self->numEntry = nL;
+
+	// Do the keySplit part of SVO
+	int rightE[kcursor->size];
+	double rkey[dim * 2];
+	double lkey[dim * 2];
+	int numRight = 0;
+
+	_keySplit(kcursor, rightE, numRight, rkey, lkey);
+	_keySplitSVO(RT, self, kcursor, rightE, numRight, newNode1, newNode2, rkey,
+			lkey);
+
+	delete kcursor;
+}
+
+bool _isKeySplit(pCursor *cursor, double currentTime) {
+	bool flag = true;
+	for (int i = 0; i < cursor->size; i++) {
+		if (cursor->entries[i].bp[4] != currentTime)
+			flag = false;
+	}
+	return flag;
+}
+
+struct xyz {
+	double bp[6];
+	int e;
+};
+
+bool cmp1_xyz(xyz a, xyz b) {
+	return a.bp[0] < b.bp[0];
+}
+
+bool cmp2_xyz(xyz a, xyz b) {
+	return a.bp[1] < b.bp[1];
+}
+
+bool cmp3_xyz(xyz a, xyz b) {
+	return a.bp[2] < b.bp[2];
+}
+
+bool cmp4_xyz(xyz a, xyz b) {
+	return a.bp[3] < b.bp[3];
+}
+
+bool cmp5_xyz(xyz a, xyz b) {
+	return a.e < b.e;
+}
+
+void _keySplit(pCursor *Cursor, int rightE[], int& nR, double* rkey,
+		double* lkey) {
+
+	//나눴을때 많은 애가 오른쪽
+	double temp = 0.0;
+	double temp_area = 0.0;
+	double min_over = DBL_MAX;
+	double min_area = DBL_MAX;
+	int minSize = minSplitRatio * MaxEntry; //smallest number of entries in a HNode;
+
+	int index = 0;
+	int axis = 0;
+	int size = Cursor->size;
+
+	xyz *ent = new xyz[size];
+	xyz *best = new xyz[size];
+
+	for (int i = 0; i < size; i++) {
+		memcpy(ent[i].bp, Cursor->entries[i].bp, klen);
+		ent[i].e = i;
+	}
+
+	int margin_x = 0, margin_y = 0;
+	int area_x = 0, area_y = 0;
+	int temp_x = 0;
+	for (int i = 0; i < 4; i++) {
+		if (i == 0)
+			sort(ent, ent + size, cmp1_xyz); //i==0  = > x_min 값으로 정렬한것
+		if (i == 1)
+			sort(ent, ent + size, cmp3_xyz); //i==1  = > x_max 값으로 정렬한것
+		if (i == 2)
+			sort(ent, ent + size, cmp2_xyz); //i==2  = > y_min 값으로 정렬한것
+		if (i == 3)
+			sort(ent, ent + size, cmp4_xyz); //i==3  = > y_max 값으로 정렬한것
+		//n-1 가지의 dist 에 대하여 sum of margin을 구한다.
+
+		temp = 0.0;
+		temp_x = 0.0;
+		for (int j = minSize; j < size - minSize - 1; j++) {
+			hr_rect temp1, temp2;
+			temp1.copyRect(ent[0].bp);
+			temp2.copyRect(ent[size - 1].bp);
+			for (int k = 0; k < j; k++) {
+				temp1.expand(ent[k].bp);
+			}
+			for (int k = j + 1; k < size; k++) {
+				temp2.expand(ent[k].bp);
+			}
+			temp = temp + temp1.margin() + temp2.margin();
+			temp_x += (temp1.span() + temp2.span());
+			temp1.dealloc();
+			temp2.dealloc();
+		}
+
+		if (i == 0 || i == 1) {
+			margin_x += temp;
+			area_x += temp_x;
+		} else {
+			margin_y += temp;
+			area_y += temp_x;
+		}
+	}
+
+	// 어떤 축으로 정렬해야 가장 적은 Margin 인지 골랐다!
+	// 그렇게 다시 한번 소팅을 하고!
+	if (margin_x < margin_y) { // BP = Xmin Ymin Xmax Ymax순서로 들어온다.
+		sort(ent, ent + size, cmp1_xyz); //i==0,2  = > Min값으로 정렬한것
+		axis = 0; //X축으로 정렬!
+	} else if (margin_x > margin_y) {
+		sort(ent, ent + size, cmp2_xyz); //i==1,3  = > Min값으로 정렬한것
+		axis = 1; //Y축으로 정렬!
+	} else {
+		if (area_x > area_y) {
+			sort(ent, ent + size, cmp2_xyz); //i==0,2  = > Min값으로 정렬한것
+			axis = 1; //Y축으로 정렬!
+		} else {
+			sort(ent, ent + size, cmp1_xyz); //i==0,2  = > Min값으로 정렬한것
+			axis = 0; //X축으로 정렬!
+		}
+	}
+	//Sorting Ends
+	//Under the sorting, find the best cut that minimize Overlap among n-1 possibilities
+	////////////////////////////////////////////////////////////////////////////////////
+
+	// 2* (n-2*k)개 중 베스트 컷을 찾자!
+	int axis_rec = 0;
+	for (int t = 0; t < 2; t++) {
+		hr_rect r1, r2;
+		r1.copyRect(ent[0].bp);
+		r2.copyRect(ent[size - 1].bp);
+
+		for (int k = 1; k < minSize; k++) {
+			r1.expand(ent[k].bp); //left
+			r2.expand(ent[size - k - 1].bp); //right
+		} //양 끝 minSize개를 미리 넣어놓고, 그 사이에 있는걸 쪼개보자 ㅇㅇ
+
+		for (int i = minSize - 1; i < size - minSize - 1; i++) { //자르는 곳의 위치 0~i까지 왼쪽, 나머진 오른쪽에 넣을 것.
+			temp = 0.0;
+			temp_area = 0.0;
+			hr_rect ll, rr;
+			ll.copyRect(r1.coord);
+			rr.copyRect(r2.coord);
+
+			for (int k = minSize; k <= i; k++) {
+				ll.expand(ent[k].bp); //0~ (i-1)까지 넣어보자 ㅇㅇ
+			}
+			for (int k = i + 1; k <= size - minSize - 1; k++) {
+				rr.expand(ent[k].bp);
+			}
+
+			temp = rr.overlap(&ll);
+			if (temp <= min_over) {
+				//if overlap = 0, then try to find a smallest area sum cut
+				if (temp == min_over) {
+					temp_area = rr.span() + ll.span();
+					if (temp_area < min_area) {
+						min_area = temp_area;
+						index = i;
+						axis_rec = axis;
+						memcpy(best, ent, sizeof(xyz) * (size));
+						memcpy(lkey, ll.coord, klen);
+						memcpy(rkey, rr.coord, klen);
+					}
+				} else {
+					min_over = temp;
+					index = i;
+					axis_rec = axis;
+					memcpy(best, ent, sizeof(xyz) * (size));
+					memcpy(lkey, ll.coord, klen);
+					memcpy(rkey, rr.coord, klen);
+				}
+			}
+			rr.dealloc();
+			ll.dealloc();
+		} // 몇번째 index인지 찾고
+
+		r1.dealloc();
+		r2.dealloc();
+
+		if (axis == 0) {
+			axis += 2;
+			sort(ent, ent + size, cmp3_xyz); //Max값으로 정렬
+		} else {
+			axis += 2;
+			sort(ent, ent + size, cmp4_xyz); //Max값으로 정렬
+		}
+	}
+	// index를 이용해 rightE를 채워넣는다.
+	nR = 0;
+	for (int i = index + 1; i < size; i++) { // r1을 여기에 담는 것임!
+		if (best[i].e < size) {
+			rightE[nR] = best[i].e;
+			nR++;
+		}
+	}
+
+	delete[] ent;
+	delete[] best;
+	// 그 축으로 정렬한 뒤 나오는 n-3가지 split중 가장 적은 overlap이 발생하는 split을 찾는다.
+
+}
+
+void _keySplitSVO(RootTable *RT, HNode* self, pCursor *cursor, int rightE[],
+		int numRight, HNode*& newNode1, HNode*& newNode2, double *rkey,
+		double *lkey) {
+	if (self->isRoot == true) {
+		if (isPrintSplit)
+			cout << "Extension::_keySplitSVO Root Key Split" << endl;
+
+		HNode *right = new HNode();
+		HNode *left = new HNode();
+		right->level = self->level;
+		left->level = self->level;
+		right->numEntry = 0;
+		left->numEntry = 0;
+		for (int i = 0; i < cursor->size; i++) {
+			bool temp_flag = false;
+			for (int j = 0; j < numRight; j++) {
+				if (rightE[j] == i)
+					temp_flag = true;
+			}
+			if (temp_flag) {
+				memcpy(&right->entries[right->numEntry], &cursor->entries[i],
+						sizeof(Entry));
+				right->numEntry++;
+			} else {
+				memcpy(&left->entries[left->numEntry], &cursor->entries[i],
+						sizeof(Entry));
+				left->numEntry++;
+			}
+		}
+
+		memcpy(left->bp, lkey, klen);
+		memcpy(right->bp, rkey, klen);
+
+		//Make a new Root
+		RT->Root[RT->numRoot] = new HNode();
+		RT->Root[RT->numRoot]->isRoot = true;
+		RT->Root[RT->numRoot]->level = self->level + 1;
+		RT->Root[RT->numRoot]->numEntry = 2;
+		RT->Root[RT->numRoot]->entries[0].child = left;
+		RT->Root[RT->numRoot]->entries[1].child = right;
+
+		memcpy(RT->Root[RT->numRoot]->entries[0].bp, lkey, klen);
+		memcpy(RT->Root[RT->numRoot]->entries[1].bp, rkey, klen);
+
+		hr_rect keyRect(lkey, 0);
+		keyRect.expand(rkey);
+		memcpy(RT->Root[RT->numRoot]->bp, keyRect.coord, klen);
+		RT->numRoot++;
+		newNode1 = left;
+		newNode2 = right;
+
+	} else {
+		if (isPrintSplit)
+			cout << "Extension::_keySplitSVO Intermediate Key Split" << endl;
+		HNode *right = new HNode();
+		HNode *left = new HNode();
+		right->level = self->level;
+		left->level = self->level;
+		right->numEntry = 0;
+		left->numEntry = 0;
+		for (int i = 0; i < cursor->size; i++) {
+			bool temp_flag = false;
+			for (int j = 0; j < numRight; j++) {
+				if (rightE[j] == i)
+					temp_flag = true;
+			}
+			if (temp_flag) {
+				memcpy(&right->entries[right->numEntry], &cursor->entries[i],
+						sizeof(Entry));
+				right->numEntry++;
+			} else {
+				memcpy(&left->entries[left->numEntry], &cursor->entries[i],
+						sizeof(Entry));
+				left->numEntry++;
+			}
+		}
+		memcpy(left->bp, lkey, klen);
+		memcpy(right->bp, rkey, klen);
+		newNode1 = left;
+		newNode2 = right;
+	}
+}
+
+void _keySplitNode(HNode* self, pCursor *cursor, int rightE[], int numRight,
+		HNode*& newNode, double *rkey, double *lkey) {
+	if (self->isRoot == true) {
+		if (isPrintSplit)
+			cout << "HNode::_SplitHNode Root Key Split" << endl;
+		HNode *right = new HNode();
+		HNode *left = new HNode();
+		right->level = self->level;
+		left->level = self->level;
+		right->numEntry = 0;
+		left->numEntry = 0;
+		for (int i = 0; i < cursor->size; i++) {
+			bool temp_flag = false;
+			for (int j = 0; j < numRight; j++) {
+				if (rightE[j] == i)
+					temp_flag = true;
+			}
+			if (temp_flag) {
+				memcpy(&right->entries[right->numEntry], &cursor->entries[i],
+						sizeof(Entry));
+				right->numEntry++;
+			} else {
+				memcpy(&left->entries[left->numEntry], &cursor->entries[i],
+						sizeof(Entry));
+				left->numEntry++;
+			}
+		}
+		self->level++; // 자기 자신은 하나 올라가고
+		self->numEntry = 2;
+		self->entries[0].child = left;
+		self->entries[1].child = right;
+		memcpy(self->entries[0].bp, lkey, klen);
+		memcpy(self->entries[1].bp, rkey, klen);
+		memcpy(left->bp, lkey, klen);
+		memcpy(right->bp, rkey, klen);
+
+		hr_rect keyRect(lkey, 0);
+		keyRect.expand(rkey);
+		memcpy(self->bp, keyRect.coord, klen);
+		newNode = right;
+	} else {
+		if (isPrintSplit)
+			cout << "HNode::_SplitHNode Intermediate Key Split" << endl;
+		HNode *right = new HNode();
+		right->level = self->level;
+
+		int tempR = 0, tempL = 0;
+		bool temp_flag;
+
+		for (int i = 0; i < cursor->size; i++) { //옮겨닮자
+			temp_flag = false;
+			for (int j = 0; j < numRight; j++) {
+				if (rightE[j] == i)
+					temp_flag = true;
+			}
+			if (temp_flag) {
+				memcpy(&right->entries[tempR], &cursor->entries[i],
+						sizeof(Entry));
+				tempR++;
+			} else {
+				memcpy(&self->entries[tempL], &cursor->entries[i],
+						sizeof(Entry));
+				tempL++;
+			}
+		}
+		right->numEntry = tempR;
+		self->numEntry = tempL;
+		memcpy(self->bp, lkey, klen);
+		memcpy(right->bp, rkey, klen);
+		newNode = right; //for Output
+	}
+}
+
+void _printStack(stack* st) {
+	cout << "curr : " << st->curr << " depth : " << st->depth << endl;
+	if (st->depth > 0) {
+		for (int i = 0; i < st->depth; i++) {
+			cout << st->choice[i] << " -> ";
+		}
+		cout << endl;
+	} else
+		cout << "	stack is empty" << endl;
+}
+
+int _Consistent(double *bp, double *key) {
+	hr_rect r1(bp);
+	hr_rect r2(key);
+	if (r1.intersect(&r2)) {
+		r1.dealloc();
+		r2.dealloc();
+		return 1;
+	} else {
+		r1.dealloc();
+		r2.dealloc();
 		return 0;
 	}
 }
 
+/*=================================================
+ *=======================Debug=====================
+ *================================================= */
 
+void _printNode(HNode* HNode) {
+	int lvl = HNode->level;
 
+	if (HNode->isRoot)
+		cout << "Root" << endl;
+	cout << "#" << HNode->NodeNumber << " level: " << lvl << " # slots: "
+			<< HNode->numEntry << ", Avail: " << MaxEntry - HNode->numEntry
+			<< endl;
+	cout << "\tbp: <     ";
 
+	for (int i = 0; i < dim * 2; i++) {
+		if (HNode->bp[i] == DBL_MAX)
+			cout << "* ";
+		else
+			cout << HNode->bp[i] << " ";
+	}
+	cout << ">\n";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	for (int i = 0; i < HNode->numEntry; i++) {
+		cout << "\t[" << i << "] <";
+		cout << " bp: ";
+		for (int j = 0; j < dim * 2; j++) {
+			if ((double) HNode->entries[i].bp[j] == DBL_MAX)
+				cout << "* ";
+			else
+				cout << (double) HNode->entries[i].bp[j] << " ";
+		}
+		cout << " >";
+		if (lvl == 1)
+			cout << " data: " << HNode->entries[i].data << endl;
+		else
+			cout << " child: " << HNode->entries[i].child->numEntry << endl;
+	}
+	return;
+}
