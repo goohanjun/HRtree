@@ -58,14 +58,14 @@ int Delete(HNode* root, double* key, int data, int dlen, RootTable* RT) {
 	_printStack(Stack);
 
 	if(leaf->_numAlive() < UF_Ratio * MaxEntry){
-		_TreatUnderflow();
+		_TreatUnderflow(Stack->trace[0], Stack->trace[1],Stack); // leaf and it's parent
 	}
 
-	for (int i = 0; i < root->level; i++) {
+	for (int i = 1; i < root->level-2; i++) {
 		//TODO
 
 		//_TreatOverflow(leaf, Stack, nNode1, nNode2, status, RT, currentTime);
-		//_TreatUnderflow();
+		_TreatUnderflow(Stack->trace[i], Stack->trace[i+1],Stack);
 	}
 
 	if (status == 1 || status == 2)
@@ -197,8 +197,74 @@ bool _FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key, int data) {
 	return false;
 }
 
-int _TreatUnderflow() {
+int _TreatUnderflow(HNode* Parent, HNode* self,stack *st) {
+	int index = 0;
+	int indexToSelf = st->choice[self->level]; // From parent to self
+	double minAreaEnlarge=DBL_MAX;
+	double tempArea;
+	double deltaArea;
+
+	for(int i = 0; i<Parent->numEntry;i++){
+		if( i!= indexToSelf && Parent->entries[i].bp[5]==DBL_MAX){ // See only alive entry except self
+			hr_rect keyBP;
+			keyBP.copyRect(Parent->entries[i].bp);
+			tempArea = keyBP.span();
+			keyBP.expand(self->bp);
+			deltaArea = keyBP.span()- tempArea;
+
+			if(deltaArea < minAreaEnlarge){
+				index = i;
+				minAreaEnlarge = deltaArea;
+			}
+			keyBP.dealloc();
+		}
+	}
+
+	HNode *MergeNode= Parent->entries[index].child;
+
+	pCursor *cursor = new pCursor();
+	// Delete self, and the node that will be merged soon.
+	// and Make a cursor
+	for (int i = 0; i < self->numEntry; i++) {
+		if(self->entries[i].bp[5]==DBL_MAX){
+			cursor->InsertEntry(&self->entries[i]);
+		}
+	}
+	for (int i = 0; i < MergeNode->numEntry; i++) {
+		if(self->entries[i].bp[5]==DBL_MAX){
+			cursor->InsertEntry(&MergeNode->entries[i]);
+		}
+	}
+
+	// Merge
+	HNode *newNode1, *newNode2;
+
+
+	if( cursor->size < MaxEntry * SVO_Ratio ){ //Merge
+		newNode1 = _Merge(Parent->entries[index].child, self);
+	}
+	else{ //KeySplit
+		newNode2 = new HNode();
+		newNode2->level = self->level;
+
+		double *rkey, *lkey;
+		int numRight;
+		int rightEntries[cursor->size];
+		_keySplit(cursor, rightEntries, numRight, rkey, lkey);
+		_keySplitNode(newNode2, cursor, rightEntries, numRight, newNode1, rkey,	lkey);
+	}
+
+
+
 	return 1;
+}
+
+HNode* _Merge(HNode* Node1, HNode* Node2){
+	pCursor *cursor = new pCursor();
+	HNode *newNode = new HNode();
+
+
+	return newNode;
 }
 
 int _Deletion_ApplyChanges() {

@@ -24,6 +24,7 @@ public:
 
 	bool InsertNode(HNode *nNode);
 	bool InsertEntry(HNode *nNode);
+	bool InsertEntry(Entry *nEntry);
 	int numAliveEntry();
 
 	void printCursor();

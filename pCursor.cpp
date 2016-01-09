@@ -34,6 +34,13 @@ bool pCursor::InsertEntry(HNode *nNode){
 	return true;
 }
 
+bool pCursor::InsertEntry(Entry *nEntry){
+	memcpy( entries[size].bp, nEntry->bp,klen);
+	entries[size].child = nEntry->child;
+	size++;
+	return true;
+}
+
 int pCursor::numAliveEntry(){
 	int num = 0;
 	for (int i= 0; i<size; i++){

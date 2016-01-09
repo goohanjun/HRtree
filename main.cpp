@@ -39,7 +39,7 @@ int main(){
 	double key[6];  /// X_min, Y_min, X_max, Y_max, t_start, t_end
 	int data = 0;
 
-	//For parsing the data
+	// ==================Parsing==================
 	char input_string[100]; //Maximum length of a line is 100 characters
 	int string_index = 0;
 	int token_array[10];
@@ -48,6 +48,9 @@ int main(){
 	string command_type;
 	string delimeter = " ";
 	size_t position = 0;
+	// ==================Parsing==================
+
+
 
 	// ===============Verification================
 	set < int > *answers[100];

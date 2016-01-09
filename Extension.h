@@ -29,9 +29,9 @@ int _TreatOverflow(HNode* self, stack* Stack, HNode*& nNode1, HNode*& nNode2, in
 
 // Deletion
 bool _FindLeaf(HNode* Node,HNode *&leaf,stack *Stack, double* key,int data);
-int _TreatUnderflow();
+int _TreatUnderflow(HNode* Parent,HNode* self,stack *st);
 int _Deletion_ApplyChanges();
-int _Merge();
+HNode* _Merge(HNode* Node1,HNode* Node2);
 
 // General
 bool _isKeySplit(pCursor *cursor, double currentTime);
