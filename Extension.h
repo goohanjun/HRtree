@@ -25,7 +25,7 @@ int Search(HNode* root, double* key, int data, int dlen, HNode* Root[], int & nu
 
 // Insertion
 HNode* _ChooseSubtree(HNode* self, stack* st, double* key, int data);
-int _TreatOverflow(HNode* self, stack* Stack, HNode*& nNode1, HNode*& nNode2, int& status, RootTable* RT, double tnow);
+int _TreatOverflow(HNode* self, stack* Stack, HNode* nNode1, HNode* nNode2, HNode*& outNode1, HNode*& outNode2, int status, RootTable* RT, double tnow);
 
 // General
 bool _isKeySplit(pCursor *cursor, double currentTime);
@@ -43,7 +43,7 @@ void _SVOSplitNode(RootTable* RT, pCursor *cursor, HNode* self, HNode*& newNode1
 void _keySplitSVO(RootTable* RT, HNode* self, pCursor *cursor, int rightE[], int numRight, HNode*& newNode1,HNode*& newNode2, double *rkey, double *lkey);
 
 // Deletion
-bool _FindLeaf(HNode* Node,HNode *&leaf,stack *Stack, double* key,int data);
+bool _FindLeaf(HNode* Node,HNode *&leaf,stack *Stack, double* key,int data, double currentTime);
 int _TreatUnderflow(HNode* Parent,HNode* self,stack *st,HNode*& Node1, HNode*& Node2, double currentTime);
 bool _deleteNode(HNode* Parent,HNode* self,pCursor *cursor,int indexToSelf, double currentTime);
 

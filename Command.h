@@ -14,8 +14,8 @@
 #include <set>
 using namespace std;
 
-int CommandInsert(HNode* root, double* key, int data, int dlen, RootTable* RootTable);
-int CommandDelete(HNode* root, double* key, int data, int dlen, RootTable* RootTable);
+int CommandInsert(double* key, int data, int dlen, RootTable* RootTable);
+int CommandDelete(double* key, int data, int dlen, RootTable* RootTable);
 int CommandSearch(HNode* root, double* key, int data, int dlen, RootTable* RootTable);
 void CommandTimeStamp(RootTable *RT, double *key,int data,set<int>* ans, int status);
 void CommandTimeIntv(RootTable *RT, double *key,int data,set<int>* ans, int status);

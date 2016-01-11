@@ -37,6 +37,7 @@ bool pCursor::InsertEntry(HNode *nNode){
 bool pCursor::InsertEntry(Entry *nEntry){
 	memcpy( entries[size].bp, nEntry->bp,klen);
 	entries[size].child = nEntry->child;
+	entries[size].data = nEntry->data;
 	size++;
 	return true;
 }

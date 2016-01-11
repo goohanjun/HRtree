@@ -52,7 +52,8 @@ int main(int argc, char *argv[]){
 
 	 */
 	char buf[1024];
-	FILE *fin = fopen( "res/hr_input_0.txt", "r" );
+	//FILE *fin = fopen( "res/hr_input_10.txt", "r" );
+	FILE *fin = fopen( "input_1.txt", "r" );
 	FILE *fout = fopen( "result.out", "w" );
 
 	int nObj;
@@ -83,7 +84,7 @@ int main(int argc, char *argv[]){
 				key[i] = atof(buf);
 			}
 			key[5] = DBL_MAX;
-			CommandInsert(RT->Root[RT->numRoot-1], key, id, sizeof(int), RT);
+			CommandInsert(key, id, sizeof(int), RT);
 			//cout<< id << " is Inserted"<<endl;
 		}
 
@@ -93,12 +94,14 @@ int main(int argc, char *argv[]){
 		 * Data = Object_ID
 		 */
 		else if ( strcmp( buf, "Delete" ) == 0 ) {
+			CommandView(RT);
 			fscanf( fin, "%d", &id );
 			for ( int i=0; i<4; ++i ) {
 				fscanf( fin, "%s", buf );
 				key[i] = atof(buf);
 			}
-			CommandDelete(RT->Root[RT->numRoot-1], key, id, sizeof(int), RT);
+			CommandDelete( key, id, sizeof(int), RT);
+			cout<< id << " is Deleted"<<endl;
 		}
 
 		else if (strcmp( buf, "Search" ) == 0 ) {
@@ -132,14 +135,18 @@ int main(int argc, char *argv[]){
 
 		if(!CommandVerifyTree(RT, (int) key[4]))
 			cout<<"Error in VerifyTree"<<endl;
-
-
-		//CommandView(RT);
+		/*
+		if(id==16 || id ==15){
+			cout<<id <<endl;
+			CommandView(RT);
+		}
+		*/
 	}
+	CommandView(RT);
 	cout<<"Done!"<<endl;
 	fclose(fin);
 	fclose(fout);
-	//CommandView(RT);
+
 
 	return 0;
 }

@@ -90,21 +90,36 @@ bool hr_rect::isAlive(double tnow) {
 }
 
 bool hr_rect::isInclude(double* key) {
-	bool flag = true;
-	if(coord[0] > key [0] ||  coord[1] > key[1])
-		flag = false;
-	if(coord[2] < key [2] || coord[3] < key[3])
-		flag = false;
-	return flag;
+	bool flag_x = false, flag_y = false;
+	if( coord[0] <= key[0] && key[2] <= coord[2])
+		flag_x = true;
+	if( coord[1] <=key[1] && key[3] <= coord[3])
+		flag_y = true;
+	if(flag_x == true && flag_y== true)
+		return true;
+	else
+		return false;
 }
 
 bool hr_rect::isIncluded(double* key) {
+	bool flag_x = false, flag_y = false;
+	if (key[0] <= coord[0] && coord[2] <= key[2])
+		flag_x = true;
+	if (key[1] <= coord[1] && coord[3] <= key[3])
+		flag_y = true;
+
+	if (flag_x == true && flag_y == true)
+		return true;
+	else
+		return false;
+	/*
 	bool flag = true;
 	if(key[0] > coord [0] ||  key[1] > coord[1])
 		flag = false;
 	if(key[2] < coord [2] || key[3] < coord[3])
 		flag = false;
 	return flag;
+	*/
 }
 
 double hr_rect::span() {

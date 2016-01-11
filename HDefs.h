@@ -32,7 +32,7 @@
 
 //Insertion
 #define isPrintPath 0 //Choose Subtree
-#define isPrintOverflow 0 // TreatOverflow
+#define isPrintOverflow 1 // TreatOverflow
 
 //Split
 #define isPrintSplit 0 //Key, Version, SVO Splits

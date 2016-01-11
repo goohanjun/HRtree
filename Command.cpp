@@ -13,7 +13,7 @@
 
 using namespace std;
 
-int CommandInsert(HNode* root, double* key, int data, int dlen, RootTable* RT) {
+int CommandInsert(double* key, int data, int dlen, RootTable* RT) {
 	if (!Insert(RT->Root[RT->numRoot-1], key, data, sizeof(int), RT)) {
 		if (RT->numRoot < MAX_ROOT) { //previous Root is deleted. Insert a new alive root
 			cout<<"Main:: Insert a new alive root"<<endl;
@@ -29,11 +29,11 @@ int CommandInsert(HNode* root, double* key, int data, int dlen, RootTable* RT) {
 
 }
 
-int CommandDelete(HNode* root, double* key, int data, int dlen, RootTable* RT) {
-	if (Delete(root, key, data, dlen, RT)) {
+int CommandDelete(double* key, int data, int dlen, RootTable* RT) {
+	if (Delete(RT->Root[RT->numRoot-1], key, data, dlen, RT)) {
 		return 1;
 	} else {
-		cerr << "Deletion is Failed,  key[0] = " << key[0] << endl;
+		cerr << "Deletion is Failed, id = " << data << endl;
 		return 0;
 	}
 }
