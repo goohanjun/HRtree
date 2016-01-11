@@ -45,6 +45,7 @@ public:
 	bool expand( double * key);
 	double intersect ( hr_rect *k);
 	double overlap (hr_rect *k);
+	bool isOverlap(double *key);
 	double span();
 	double margin();
 	double dist(hr_rect *j);

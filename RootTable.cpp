@@ -12,7 +12,6 @@ RootTable::RootTable(){
 	Root[0] = new HNode();
 	Root[0]->isRoot = true;
 	numRoot = 1;
-	currentTime = 0;
 }
 
 //TODO

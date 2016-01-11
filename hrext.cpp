@@ -44,11 +44,11 @@ void hr_rect::dealloc() {
 	delete[] coord;
 }
 
-double findPen_over(hr_rect *j, hr_rect *k) { //Span 을 계산한것. 나중에 고쳐야함.
+double findPen_over(hr_rect *j, hr_rect *k) { //Span 을 계산한것. 나중에 고쳐야함. TODO
 
 	hr_rect nRect(j->coord); // 확장시킬거 복사해놓고
 	nRect.expand(k);
-	double result = nRect.span() - k->span();
+	double result = nRect.overlap(k);
 	nRect.dealloc();
 	return result;
 }
@@ -166,8 +166,27 @@ double hr_rect::overlap(hr_rect *j) {
 	return result > 0.0 ? result : 0.0;
 }
 
+bool hr_rect::isOverlap(double *key) {
+
+	bool isOverX = false, isOverY = false;
+	if (coord[0] <= key[0] && key[0] < coord[2])
+		isOverX = true;
+	if (key[0] <= coord[0] && coord[0] < key[2])
+		isOverX = true;
+
+	if (coord[1] <= key[1] && key[1] < coord[3])
+		isOverY = true;
+	if (key[1] <= coord[1] && coord[1] < key[3])
+		isOverY = true;
+
+	if( isOverX == true && isOverY == true)
+		return true;
+	else
+		return false;
+}
+
 bool hr_rect::expand(hr_rect *j) {
-	bool flag = false;
+	bool flag = true;
 	for (int i = 0; i < dimension; i++) {
 		if (j->lo(i) < lo(i)) {
 			lo(i) = j->lo(i);

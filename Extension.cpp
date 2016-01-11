@@ -12,7 +12,8 @@ using namespace std;
 int Insert(HNode* root, double* key, int data, int dlen, RootTable* RT) {
 
 	stack *Stack = new stack();
-	HNode *leaf, *nNode1, *nNode2;
+	HNode *leaf;
+	HNode *nNode1, *nNode2;
 	int status = 0;
 	double tnow = key[4]; //
 
@@ -36,6 +37,9 @@ int Insert(HNode* root, double* key, int data, int dlen, RootTable* RT) {
 	leaf->entries[leaf->numEntry].dlen = dlen;
 	leaf->numEntry++;
 
+	// TODO
+	// For loop _Treat Overflow Implementation
+
 	_TreatOverflow(leaf, Stack, nNode1, nNode2, status, RT, tnow);
 
 	delete Stack;
@@ -46,31 +50,44 @@ int Insert(HNode* root, double* key, int data, int dlen, RootTable* RT) {
 int Delete(HNode* root, double* key, int data, int dlen, RootTable* RT) {
 
 	HNode *leaf, *nNode1, *nNode2;
+	//*nNode2;
 	stack *Stack = new stack();
-	int status = 0;
+	int statusUF = 0;
+	int statusOF = 0;
 	int numEnt = 0;
 	double currentTime = key[5]; // || key[4];
 
+	if(root->bp[5] != DBL_MAX){
+		cout<< "This root is already closed. "<<endl;
+		return 0;
+	}
 	if (!_FindLeaf(root, leaf, Stack, key, data)) { //Find a leaf node to delete the object from
 		cout << "Deletion Failed. No such object in the tree" << endl;
 		return 0;
 	}
+	//Debug
 	_printStack(Stack);
 
-	if(leaf->_numAlive() < UF_Ratio * MaxEntry){
-		_TreatUnderflow(Stack->trace[0], Stack->trace[1],Stack); // leaf and it's parent
+	if (root->level == 1) // Don't need to go further
+		return 1;
+
+	//TODO Need to make Underflow && Overflow
+	if (leaf->_numAlive() < UF_Ratio * MaxEntry) {
+		HNode *nNode3; //For variable nNode1,2
+		statusUF = _TreatUnderflow(Stack->trace[0], Stack->trace[1], Stack, nNode1, nNode2, currentTime); // leaf and it's parent
+		//status == 1 , nNode1 need to be inserted in ParentNode
+		//status == 2 , nNode1,2 need to be inserted in ParentNode
 	}
 
-	for (int i = 1; i < root->level-2; i++) {
-		//TODO
+	for (int i = 1; i < root->level - 2; i++) {
 
-		//_TreatOverflow(leaf, Stack, nNode1, nNode2, status, RT, currentTime);
-		_TreatUnderflow(Stack->trace[i], Stack->trace[i+1],Stack);
+		//_TreatOverflow(leaf, Stack, nNode1, nNode2, statusOF, RT, currentTime);
+		statusUF = _TreatUnderflow(Stack->trace[i], Stack->trace[i + 1],Stack,nNode1, nNode2, currentTime);
 	}
 
-	if (status == 1 || status == 2)
+	if (statusOF == 1 || statusOF == 2)
 		numEnt = 1;
-	else if (status == 3)
+	else if (statusOF == 3)
 		numEnt = 2;
 
 	if (root->numEntry + numEnt > MaxEntry) { // Root Overflow then try VersionSplit
@@ -102,32 +119,31 @@ bool _FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key, int data) {
 	if (Node->level == 1) {
 		int index = 0;
 		int numAlive = 0;
-		bool flag= true;
+		bool flag = true;
 		bool isExist = false;
 		hr_rect newBP;
 		for (int i = 0; i < Node->numEntry; i++) {
-			if (Node->entries[i].data == data){
+			if (Node->entries[i].data == data) {
 				index = i;
 				isExist = true;
-			}
-			else if (Node->entries[i].bp[5] == DBL_MAX) { // Alive Entry
+			} else if (Node->entries[i].bp[5] == DBL_MAX) { // Alive Entry
 				numAlive++;
-				if (flag){
+				if (flag) {
 					newBP.copyRect(Node->entries[i].bp);
 					flag = false;
-				}
-				else
+				} else
 					newBP.expand(Node->entries[i].bp);
 			}
 		}
-		if( isExist == false){
+		if (isExist == false) {
 			newBP.dealloc();
 			return false;
 		}
 		// Physical Deletion
-		if(Node->entries[index].bp[4] == key[5]){
-			if(index != (Node->numEntry-1))
-				memcpy(&Node->entries[index], &Node->entries[Node->numEntry-1], sizeof(Entry));
+		if (Node->entries[index].bp[4] == key[5]) {
+			if (index != (Node->numEntry - 1))
+				memcpy(&Node->entries[index],
+						&Node->entries[Node->numEntry - 1], sizeof(Entry));
 			Node->numEntry--;
 		}
 		// Logical Deletion
@@ -139,8 +155,8 @@ bool _FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key, int data) {
 			memcpy(Node->bp, newBP.coord, klen);
 		}
 
-		if(Node->isRoot && Node->level ==1){ // When Root is a leaf node, Root can be closed.
-			if(numAlive==0)
+		if (Node->isRoot && Node->level == 1) { // When Root is a leaf node, Root can be closed.
+			if (numAlive == 0)
 				Node->bp[5] = key[5]; // Close the Root
 		}
 		leaf = Node;
@@ -154,20 +170,24 @@ bool _FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key, int data) {
 	keyRect.copyRect(key);
 	// Non-leaf Nodes
 	for (int i = 0; i < Node->numEntry; i++) {
-		if (Node->entries[i].bp[5] == DBL_MAX && keyRect.isIncluded(Node->entries[i].bp)) { // Alive Entry which include key's BP
-			if(_FindLeaf(Node->entries[i].child, leaf, Stack, key, data)){
+		if (Node->entries[i].bp[5] == DBL_MAX
+				&& keyRect.isIncluded(Node->entries[i].bp)) { // Alive Entry which include key's BP
+			if (_FindLeaf(Node->entries[i].child, leaf, Stack, key, data)) {
 
-				if(Node->entries[i].bp[4] < key[5] && Stack->isChanged[Node->level-2] ){ // Insert new entry e' and close e
+				if (Node->entries[i].bp[4] < key[5]
+						&& Stack->isChanged[Node->level - 2]) { // Insert new entry e' and close e
 					// close e
 					Node->entries[i].bp[5] = key[5];
 					// make e'
-					memcpy(&Node->entries[Node->numEntry] , &Node->entries[i], sizeof(Entry));
-					memcpy(Node->entries[Node->numEntry].bp, Node->entries[i].child->bp, klen);
+					memcpy(&Node->entries[Node->numEntry], &Node->entries[i],
+							sizeof(Entry));
+					memcpy(Node->entries[Node->numEntry].bp,
+							Node->entries[i].child->bp, klen);
 					Node->entries[Node->numEntry].bp[4] = key[5];
 					Node->numEntry++;
-				}
-				else if (Stack->isChanged[Node->level-2]){ // Just update e's BP
-					memcpy(Node->entries[i].bp, Node->entries[i].child->bp, klen);
+				} else if (Stack->isChanged[Node->level - 2]) { // Just update e's BP
+					memcpy(Node->entries[i].bp, Node->entries[i].child->bp,
+							klen);
 				}
 
 				hr_rect newBP;
@@ -182,10 +202,10 @@ bool _FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key, int data) {
 					}
 				}
 
-				Stack->choice[Node->level-1] = i;
-				if(!newBP.isEqual(Node->bp)){
-					Stack->isChanged[Node->level-1] = true;
-					memcpy(Node->bp, newBP.coord,klen);
+				Stack->choice[Node->level - 1] = i;
+				if (!newBP.isEqual(Node->bp)) {
+					Stack->isChanged[Node->level - 1] = true;
+					memcpy(Node->bp, newBP.coord, klen);
 				}
 
 				newBP.dealloc();
@@ -197,22 +217,26 @@ bool _FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key, int data) {
 	return false;
 }
 
-int _TreatUnderflow(HNode* Parent, HNode* self,stack *st) {
-	int index = 0;
+int _TreatUnderflow(HNode* Parent, HNode* self,stack *st, HNode*& Node1, HNode*& Node2, double currentTime) {
+
+	int status = 0;
+
+	int index = 0; // From parent to MergeNode
 	int indexToSelf = st->choice[self->level]; // From parent to self
-	double minAreaEnlarge=DBL_MAX;
+	double minAreaEnlarge = DBL_MAX;
 	double tempArea;
 	double deltaArea;
+	int level = self->level;
 
-	for(int i = 0; i<Parent->numEntry;i++){
-		if( i!= indexToSelf && Parent->entries[i].bp[5]==DBL_MAX){ // See only alive entry except self
+	for (int i = 0; i < Parent->numEntry; i++) {
+		if (i != indexToSelf && Parent->entries[i].bp[5] == DBL_MAX) { // See only alive entry except self
 			hr_rect keyBP;
 			keyBP.copyRect(Parent->entries[i].bp);
 			tempArea = keyBP.span();
 			keyBP.expand(self->bp);
-			deltaArea = keyBP.span()- tempArea;
+			deltaArea = keyBP.span() - tempArea;
 
-			if(deltaArea < minAreaEnlarge){
+			if (deltaArea < minAreaEnlarge) {
 				index = i;
 				minAreaEnlarge = deltaArea;
 			}
@@ -220,55 +244,135 @@ int _TreatUnderflow(HNode* Parent, HNode* self,stack *st) {
 		}
 	}
 
-	HNode *MergeNode= Parent->entries[index].child;
+	// Find an alive node that give minimum area enlargement
+	HNode *MergeNode = Parent->entries[index].child;
+
+	//Debug
+	if(MergeNode->bp[5] !=DBL_MAX)
+		cout<<"\n\n\n\n\n ERROR! in TreatUnderflow \n\n\n\n\n"<<endl;
 
 	pCursor *cursor = new pCursor();
-	// Delete self, and the node that will be merged soon.
-	// and Make a cursor
-	for (int i = 0; i < self->numEntry; i++) {
-		if(self->entries[i].bp[5]==DBL_MAX){
-			cursor->InsertEntry(&self->entries[i]);
+
+	// Delete the Node & Make cursor
+	_deleteNode ( Parent, self, cursor, indexToSelf, currentTime);
+	_deleteNode ( Parent, MergeNode, cursor, index, currentTime);
+
+	if (cursor->size < MaxEntry * SVO_Ratio) { //Merge
+		HNode *newNode1 = new HNode();
+		hr_rect newBP;
+		for(int i = 0; i < cursor->size;i++){
+			if(i==0)
+				newBP.copyRect(cursor->entries[i].bp);
+			else
+				newBP.expand(cursor->entries[i].bp);
+
+			memcpy(&newNode1->entries[i],&cursor->entries[i],sizeof(Entry));
 		}
+		//Node setting
+		newNode1->numEntry = cursor->size;
+		newNode1->level = level;
+
+		//BP setting
+		memcpy(newNode1->bp,newBP.coord, klen);
+		newNode1->bp[4] = currentTime;
+		newNode1->bp[5] = DBL_MAX;
+
+		Node1 = newNode1;
+		status = 1;
 	}
-	for (int i = 0; i < MergeNode->numEntry; i++) {
-		if(self->entries[i].bp[5]==DBL_MAX){
-			cursor->InsertEntry(&MergeNode->entries[i]);
-		}
-	}
+	else { //KeySplit (Similar with SVO)
+		HNode *rightNode = new HNode();
+		HNode *leftNode = new HNode();
 
-	// Merge
-	HNode *newNode1, *newNode2;
-
-
-	if( cursor->size < MaxEntry * SVO_Ratio ){ //Merge
-		newNode1 = _Merge(Parent->entries[index].child, self);
-	}
-	else{ //KeySplit
-		newNode2 = new HNode();
-		newNode2->level = self->level;
-
-		double *rkey, *lkey;
+		double rkey[dim * 2], lkey[dim * 2];
 		int numRight;
 		int rightEntries[cursor->size];
+		bool isRight = false;
+		int rightSize = 0, leftSize = 0;
+
 		_keySplit(cursor, rightEntries, numRight, rkey, lkey);
-		_keySplitNode(newNode2, cursor, rightEntries, numRight, newNode1, rkey,	lkey);
+
+		for(int i = 0; i<cursor->size; i++){
+			isRight = false;
+			for(int j = 0; j<numRight;j++){
+				if(rightEntries[j] == i)
+					isRight = true;
+			}
+
+			if(isRight){
+				memcpy(&rightNode->entries[rightSize], &cursor->entries[i] ,sizeof(Entry));
+				rightSize++;
+			}
+			else{
+				memcpy(&leftNode->entries[leftSize], &cursor->entries[i] ,sizeof(Entry));
+				leftSize++;
+			}
+		}
+
+
+		rightNode->level = level;
+		leftNode->level = level;
+
+		memcpy(rightNode,rkey, klen);
+		memcpy(leftNode->bp,lkey, klen);
+
+		rightNode->bp[4] = currentTime;
+		leftNode->bp[4] = currentTime;
+
+		rightNode->numEntry = rightSize;
+		leftNode->numEntry = leftSize;
+
+		Node1 = leftNode;
+		Node2 = rightNode;
+		status =2;
 	}
 
+	delete cursor;
 
-
-	return 1;
+	return status;
 }
 
-HNode* _Merge(HNode* Node1, HNode* Node2){
-	pCursor *cursor = new pCursor();
-	HNode *newNode = new HNode();
+// false == physically deleted, true == logically deleted.
+bool _deleteNode(HNode* Parent,HNode* self, pCursor *cursor, int indexToSelf, double currentTime){
+
+	if (self->bp[4] < currentTime) {
+		bool flag = true;
+		hr_rect newKey;
+		for (int i = 0; i < self->numEntry; i++) {
+			if (flag && self->entries[i].bp[4] < currentTime ){
+				newKey.copyRect(self->entries[i].bp);
+				flag = false;
+			}
+			else if (flag == false && self->entries[i].bp[4] < currentTime)
+				newKey.expand(self->entries[i].bp);
 
 
-	return newNode;
-}
+			if (self->entries[i].bp[5] == DBL_MAX) {
+				cursor->InsertEntry(&self->entries[i]);
+				self->entries[i].bp[5] = currentTime;
+			}
 
-int _Deletion_ApplyChanges() {
-	return 1;
+		}
+		memcpy( self->bp, newKey.coord, klen);
+		self->bp[5] = currentTime;
+		newKey.dealloc();
+
+		return true;
+	} else { //Physically Delete the self node
+
+		for (int i = 0; i < self->numEntry; i++) {
+			if (self->entries[i].bp[5] == DBL_MAX)
+				cursor->InsertEntry(&self->entries[i]);
+		}
+
+		if(indexToSelf == (Parent->numEntry-1) )
+			Parent->numEntry--;
+		else{
+			memcpy(&Parent->entries[indexToSelf], &Parent->entries[Parent->numEntry-1], sizeof(Entry) );
+			Parent->numEntry--;
+		}
+		return false;
+	}
 }
 
 //Insertion
@@ -355,6 +459,7 @@ int _TreatOverflow(HNode* self, stack* Stack, HNode*& nNode1, HNode*& nNode2,
 	bool isOverflow = false;
 	HNode *newNode1, *newNode2;
 	int numKey = 0;
+
 	if (status == 1 || status == 2) // KeySplit || VersionSplit
 		numKey = 1;
 	else if (status == 3) // Strong Version Split
@@ -443,11 +548,13 @@ int _TreatOverflow(HNode* self, stack* Stack, HNode*& nNode1, HNode*& nNode2,
 			_printNode(newNode2);
 		}
 	}
+
 	if (self->isRoot != true) {
 		Stack->curr--;
 		return _TreatOverflow(Stack->trace[Stack->curr], Stack, newNode1,
 				newNode2, status, RT, tnow); // Call Parent's with newNode2 (which is newly created)
 	}
+
 	if (isPrintOverflow)
 		cout << "Extension::_TreatOverflow Over" << endl;
 	return 1;
@@ -829,6 +936,7 @@ void _keySplit(pCursor *Cursor, int rightE[], int& nR, double* rkey,
 
 }
 
+//
 void _keySplitSVO(RootTable *RT, HNode* self, pCursor *cursor, int rightE[],
 		int numRight, HNode*& newNode1, HNode*& newNode2, double *rkey,
 		double *lkey) {

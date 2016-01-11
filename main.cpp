@@ -14,10 +14,16 @@
 #include "Command.h"
 #include "RootTable.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
+
+#include <sstream>
 #include <iostream>
+#include <string>
 #include <set>
 
 using std::cout;
@@ -28,116 +34,57 @@ using std::ofstream;
 using std::string;
 using std::atoi;
 using std::set;
-using std::pair;
+using std::string;
 
-int main(){
+int main(int argc, char *argv[]){
+	/*
+
+	if(argc !=2) {
+		cout<<"Error : No input\n";
+		exit(1);
+	}
+
+	char buf[1024];
+	FILE *fin = fopen( argv[1], "r" );
+	sprintf( buf, "%s", argv[1] );
+	sprintf( buf, "result.out" );
+	FILE *fout = fopen( buf, "w" );
+
+	 */
+	char buf[1024];
+	FILE *fin = fopen( "res/hr_input_0.txt", "r" );
+	FILE *fout = fopen( "result.out", "w" );
+
+	int nObj;
+	fscanf( fin, "%d", &nObj );
+	set<int> ans;
+
 	cout << "Starting HR+Tree.." << endl;
 
 	RootTable *RT = new RootTable();
 	RT->Root[0]->bp[5]=DBL_MAX; // First root is alive
 
 	double key[6];  /// X_min, Y_min, X_max, Y_max, t_start, t_end
-	int data = 0;
+	int id = 0; // Data
 
-	// ==================Parsing==================
-	char input_string[100]; //Maximum length of a line is 100 characters
-	int string_index = 0;
-	int token_array[10];
-	ifstream input_file("input_3D");
-	string temp_string;
-	string command_type;
-	string delimeter = " ";
-	size_t position = 0;
-	// ==================Parsing==================
+	for ( int i=0; i<4; ++i ) fscanf( fin, "%s", buf );
+	while ( fscanf( fin, "%s", buf ) != EOF ) {
 
-
-
-	// ===============Verification================
-	set < int > *answers[100];
-	set<int>::iterator it;
-	int ElapsedTime=0;
-	int numAns = 0;
-
-	int numObject=0;
-	bool isCorrect = true;
-	// ===============Verification================
-
-	//Parse each line.
-	while (!input_file.eof()) {
-		//Parse the data into <Key , Data>
-		input_file.getline(input_string, 100);
-		temp_string = input_string;
-		position = temp_string.find(delimeter);
-		command_type = temp_string.substr(0, position);
-		temp_string.erase(0, position + delimeter.length());
-		string_index = 0;
-
-		while ((position = temp_string.find(delimeter)) != string::npos) {
-			token_array[string_index] = atoi(temp_string.substr(0, position).c_str());
-			temp_string.erase(0, position + delimeter.length());
-			++string_index;
-		}
-		token_array[string_index] = atoi(temp_string.c_str());
-
-		if (command_type == "Time"){
-			key[4] = token_array[0];
-
-			//For Validation
-			ElapsedTime = token_array[0];
-			answers[numAns] = new set<int>;
-			numAns++;
-			if (numAns != 1) { //Insert previous set to new set
-				for (it = answers[numAns - 2]->begin();	it != answers[numAns - 2]->end(); ++it)
-					answers[numAns - 1]->insert(*it);
-			}
-		}
-		data = token_array[4];
-		key[0] = token_array[0];
-		key[1] = token_array[2];
-		key[2] = token_array[1];
-		key[3] = token_array[3];
 		/*
 		 * Insertion
 		 * Key = [x_min y_min x_max y_max t_start t_end=*] (double array)
 		 * Data = Object_ID (integer)
 		 * RT->numRoot = 0 in the beginning
 		 */
-		if (command_type == "Insert") {
+		if ( strcmp( buf, "Insert" ) == 0 ) {
+			fscanf( fin, "%d", &id );
+			for ( int i=0; i<4; ++i ) {
+				fscanf( fin, "%s", buf );
+				key[i] = atof(buf);
+			}
 			key[5] = DBL_MAX;
-			//Key has a form [x_min y_min x_max y_max t_start t_end]
-			//cout<<"Data : "<<data <<" is inserting..."<<endl;
-			if (!CommandInsert(RT->Root[RT->numRoot-1], key, data, sizeof(int), RT)) {
-				if (RT->numRoot < MAX_ROOT) { //previous Root is deleted. Insert a new alive root
-					cout<<"Main:: Insert a new alive root"<<endl;
-					RT->Root[RT->numRoot] = new HNode();
-					RT->Root[RT->numRoot]->isRoot = true;
-					RT->Root[RT->numRoot]->bp[4] = key[4];
-					RT->numRoot++;
-					CommandInsert(RT->Root[RT->numRoot-1], key, data, sizeof(int), RT);
-					//Insert the object into new Root
-				}
-			}
-
-			if (isValidate) {
-				//For validation
-				answers[numAns-1]->insert(data);
-				if (isVerifyAnswer) {
-					for (int i = 0; i < numAns; i++) {
-						cout << i << "th Answer set" << endl;
-						for (it = answers[i]->begin(); it != answers[i]->end();
-								++it)
-							cout << *it << " ";
-						cout << endl;
-					}
-					CommandView(RT);
-
-				}
-				isCorrect = CommandVerify(RT,answers,ElapsedTime);
-			}
-			//Debug
-			//if(numObject%100 == 0)
-				cout<<"Data : "<<data<<" is inserted"<<endl;
-			numObject++;
+			CommandInsert(RT->Root[RT->numRoot-1], key, id, sizeof(int), RT);
+			//cout<< id << " is Inserted"<<endl;
 		}
 
 		/*
@@ -145,24 +92,54 @@ int main(){
 		 * Key = [x_min y_min x_max y_max t_start t_end = t_start]
 		 * Data = Object_ID
 		 */
-		if (command_type == "Delete") {
-			key[5] = key[4];
-			CommandDelete(RT->Root[RT->numRoot-1], key, data, sizeof(int), RT);
-
-			//For validation
-			answers[numAns-1]->erase(data);
-			isCorrect = CommandVerify(RT,answers,ElapsedTime);
-			cout<<"Data : "<<data<<" is deleted"<<endl;
+		else if ( strcmp( buf, "Delete" ) == 0 ) {
+			fscanf( fin, "%d", &id );
+			for ( int i=0; i<4; ++i ) {
+				fscanf( fin, "%s", buf );
+				key[i] = atof(buf);
+			}
+			CommandDelete(RT->Root[RT->numRoot-1], key, id, sizeof(int), RT);
 		}
-		CommandView(RT);
-		// Stop
-		if (command_type == "Stop")
-			break;
-	}
 
-	if( isCorrect )
-		cout<<"Finished well."<<endl;
-	else
-		cout<<"Finished with Error"<<endl;
+		else if (strcmp( buf, "Search" ) == 0 ) {
+			for ( int i=0; i<4; ++i ) {
+				fscanf( fin, "%s", buf );
+				key[i] = atof(buf);
+			}
+			ans.clear();
+			fscanf( fin, "%s", buf );
+			key[4] = atoi(buf);
+			fscanf( fin, "%s", buf ); // te = ts + 1
+			key[5] = key[4]; // Time stamp query
+
+			CommandTimeStamp(RT, key, id, &ans, 0);
+
+			// Write a result
+			for ( set<int>::iterator itr = ans.begin(); itr != ans.end(); ++itr ) {
+				fprintf( fout, "%d ", *itr );
+			}
+			fprintf( fout, "\n" );
+		}
+
+		else if ( strcmp( buf, "Time" ) == 0 ) {
+			fscanf( fin, "%s", buf );
+			key[4] =double (atoi(buf));
+		}
+
+		else if ( strcmp( buf, "Stop" ) == 0 ) {
+			break;
+		}
+
+		if(!CommandVerifyTree(RT, (int) key[4]))
+			cout<<"Error in VerifyTree"<<endl;
+
+
+		//CommandView(RT);
+	}
+	cout<<"Done!"<<endl;
+	fclose(fin);
+	fclose(fout);
+	//CommandView(RT);
+
 	return 0;
 }

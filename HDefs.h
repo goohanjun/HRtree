@@ -24,7 +24,7 @@
 
 
 //For validation
-#define isValidate 1
+#define isValidate 0
 
 // Print Options
 #define printOption 1 // Print all TODO

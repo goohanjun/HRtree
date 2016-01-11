@@ -27,12 +27,6 @@ int Search(HNode* root, double* key, int data, int dlen, HNode* Root[], int & nu
 HNode* _ChooseSubtree(HNode* self, stack* st, double* key, int data);
 int _TreatOverflow(HNode* self, stack* Stack, HNode*& nNode1, HNode*& nNode2, int& status, RootTable* RT, double tnow);
 
-// Deletion
-bool _FindLeaf(HNode* Node,HNode *&leaf,stack *Stack, double* key,int data);
-int _TreatUnderflow(HNode* Parent,HNode* self,stack *st);
-int _Deletion_ApplyChanges();
-HNode* _Merge(HNode* Node1,HNode* Node2);
-
 // General
 bool _isKeySplit(pCursor *cursor, double currentTime);
 void _RemoveEntry(HNode *self , stack *Stack, double tnow);
@@ -47,6 +41,11 @@ void _versionSplitNode(RootTable* RT, pCursor *cursor, HNode* self, HNode*& newN
 //SVO
 void _SVOSplitNode(RootTable* RT, pCursor *cursor, HNode* self, HNode*& newNode1,HNode*& newNode2,double currentTime);
 void _keySplitSVO(RootTable* RT, HNode* self, pCursor *cursor, int rightE[], int numRight, HNode*& newNode1,HNode*& newNode2, double *rkey, double *lkey);
+
+// Deletion
+bool _FindLeaf(HNode* Node,HNode *&leaf,stack *Stack, double* key,int data);
+int _TreatUnderflow(HNode* Parent,HNode* self,stack *st,HNode*& Node1, HNode*& Node2, double currentTime);
+bool _deleteNode(HNode* Parent,HNode* self,pCursor *cursor,int indexToSelf, double currentTime);
 
 //Search
 int _Consistent(double *bp, double *key);

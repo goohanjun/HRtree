@@ -14,12 +14,19 @@
 using namespace std;
 
 int CommandInsert(HNode* root, double* key, int data, int dlen, RootTable* RT) {
-	if (Insert(root, key, data, dlen, RT)) {
-		return 1;
-	} else {
-		cerr << "Insertion is Failed,  key[0] = " << key[0] << endl;
-		return 0;
+	if (!Insert(RT->Root[RT->numRoot-1], key, data, sizeof(int), RT)) {
+		if (RT->numRoot < MAX_ROOT) { //previous Root is deleted. Insert a new alive root
+			cout<<"Main:: Insert a new alive root"<<endl;
+			RT->Root[RT->numRoot] = new HNode();
+			RT->Root[RT->numRoot]->isRoot = true;
+			RT->Root[RT->numRoot]->bp[4] = key[4];
+			RT->numRoot++;
+			Insert(RT->Root[RT->numRoot-1], key, data, sizeof(int), RT);
+			//Insert the object into new Root
+		}
 	}
+	return 1;
+
 }
 
 int CommandDelete(HNode* root, double* key, int data, int dlen, RootTable* RT) {
@@ -31,19 +38,71 @@ int CommandDelete(HNode* root, double* key, int data, int dlen, RootTable* RT) {
 	}
 }
 
-int CommandSearch(HNode* root, double* key, int data, int dlen, RootTable* RT) {
-	if (Search(root, key, data, dlen, RT->Root, RT->numRoot)) {
-		return 1;
-	} else {
-		cerr << "Searching is Failed,  key[0] = " << key[0] << endl;
-		return 0;
+void CommandTimeStamp(RootTable *RT, double *key,int data,set<int>* ans, int status) {
+	// status == 0
+	// Search all of overlapped region
+	double queryTime = key[4]; //||key[5]
+	//int numRootVisited=0;
+	for (int i = 0;i<RT->numRoot;i++){
+		if( RT->Root[i]->bp[4] <= queryTime &&  queryTime < RT->Root[i]->bp[5] ){
+			_SearchObject(RT->Root[i], key, ans,queryTime);
+			//numRootVisited++;
+		}
+	}
+
+	//cout<<numRootVisited <<" many roots were visited"<<endl;
+	// status == 1
+	// Search only included region
+
+
+}
+
+void CommandTimeIntv(RootTable *RT, double *key,int data,set<int>* ans, int status) {
+	// status == 0
+	// Search all of overlapped region
+
+
+
+	// status == 1
+	// Search only included region
+
+
+}
+
+void _SearchObject(HNode *Node, double *key, set<int>* object, int Time) { // Timestamp Query to all region
+	hr_rect keyBP;
+	keyBP.copyRect(key);
+	for (int i = 0; i < Node->numEntry; i++) {
+		if ( (Node->entries[i].bp[4] <= Time)	&& (Time < Node->entries[i].bp[5])  &&	keyBP.isOverlap(Node->entries[i].bp)  ) {
+			if (Node->level == 1){
+				object->insert(Node->entries[i].data);
+				//cout<< Node->entries[i].data <<" is Chosen"<<endl;
+			}
+			else
+				_SearchObject(Node->entries[i].child, key, object, Time);
+		}
+	}
+	keyBP.dealloc();
+}
+
+void _SearchObject(HNode *Node, set<int>* object, int currentTime) { // Timestamp Query to all region
+	for (int i = 0; i < Node->numEntry; i++) {
+		if ( Node->entries[i].bp[4] <= currentTime	&& currentTime < Node->entries[i].bp[5] ) {
+			if (Node->level == 1) {
+				object->insert(Node->entries[i].data);
+			} else{
+				_SearchObject(Node->entries[i].child, object, currentTime);
+			}
+		}
 	}
 }
 
+//Debug
+//Verification.
 bool CommandVerify(RootTable *RT, set<int>* answers[],int ElapsedTime) {
 	bool isCorrect = true;
 	//Verify the trees after deletion.
-	if (!CommandVerifyTree(RT)) {
+	if (!CommandVerifyTree(RT, ElapsedTime)) {
 		isCorrect = false;
 		if (isVerifyAnswer)
 			cout << "\n\n\nSomething is Wrong in Tree Structure\n\n\n";
@@ -54,57 +113,6 @@ bool CommandVerify(RootTable *RT, set<int>* answers[],int ElapsedTime) {
 			cout << "\n\n\nSomething is Wrong in Object set\n\n\n";
 	}
 	return isCorrect;
-}
-
-void CommandView(RootTable* RT) {
-	for(int i = 0;i<RT->numRoot;i++){
-		CommandDump(RT->Root[i]);
-	}
-}
-
-void CommandDump(HNode* HNode) {
-	CommandPrint(HNode);
-	if (HNode->level > 1) {
-		for (int i = 0; i < HNode->numEntry; i++) {
-			CommandDump(HNode->entries[i].child);
-		}
-	}
-}
-
-void CommandPrint(HNode* HNode) {
-	int lvl = HNode->level;
-
-	if (HNode->isRoot)
-		cout << "Root"<<endl;
-	cout << "#" << HNode->NodeNumber << " level: " << lvl << " # slots: "
-			<< HNode->numEntry << ", Avail: " << MaxEntry - HNode->numEntry
-			<< endl;
-	cout << "\tbp: <     ";
-
-	for (int i = 0; i < dim * 2; i++) {
-		if (HNode->bp[i] == DBL_MAX)
-			cout << "* ";
-		else
-			cout << HNode->bp[i] << " ";
-	}
-	cout << ">\n";
-
-	for (int i = 0; i < HNode->numEntry; i++) {
-		cout << "\t[" << i << "] <";
-		cout << " bp: ";
-		for (int j = 0; j < dim * 2; j++) {
-			if ((double) HNode->entries[i].bp[j] == DBL_MAX)
-				cout << "* ";
-			else
-				cout << (double) HNode->entries[i].bp[j] << " ";
-		}
-		cout << " >";
-		if (lvl == 1)
-			cout << " data: " << HNode->entries[i].data << endl;
-		else
-			cout << " child: " << HNode->entries[i].child->numEntry << endl;
-	}
-	return;
 }
 
 bool CommandVerifyAnswer(RootTable *RT, set<int>* answers[], int ElapsedTime){
@@ -126,18 +134,6 @@ bool CommandVerifyAnswer(RootTable *RT, set<int>* answers[], int ElapsedTime){
 		delete object;
 	}
 	return flag;
-}
-
-void _SearchObject(HNode *Node, set<int>* object, int currentTime) {
-	for (int i = 0; i < Node->numEntry; i++) {
-		if ( Node->entries[i].bp[4] <= currentTime	&& currentTime < Node->entries[i].bp[5] ) {
-			if (Node->level == 1) {
-				object->insert(Node->entries[i].data);
-			} else{
-				_SearchObject(Node->entries[i].child, object, currentTime);
-			}
-		}
-	}
 }
 
 bool _CompareSet(set<int>* answer, set<int>* object){
@@ -162,12 +158,11 @@ bool _CompareSet(set<int>* answer, set<int>* object){
 	return isSame;
 }
 
-
-bool CommandVerifyTree(RootTable *RT){
+bool CommandVerifyTree(RootTable *RT, int currentTime){
 	//cout<<"Command Verify:: # of Root = "<<RT->numRoot<<endl;
 	bool flag = true;
 	for(int i = 0; i< RT->numRoot; i++){
-		flag = flag*VerifyRootNode(RT->Root[i],RT->currentTime);
+		flag = flag*VerifyRootNode(RT->Root[i],currentTime);
 	}
 	return flag;
 }
@@ -233,3 +228,57 @@ bool Verify(HNode* HNode, int currentTime) {
 	}
 	return flag;
 }
+
+
+//Print Roots
+void CommandView(RootTable* RT) {
+	for(int i = 0;i<RT->numRoot;i++){
+		CommandDump(RT->Root[i]);
+	}
+}
+
+void CommandDump(HNode* HNode) {
+	CommandPrint(HNode);
+	if (HNode->level > 1) {
+		for (int i = 0; i < HNode->numEntry; i++) {
+			CommandDump(HNode->entries[i].child);
+		}
+	}
+}
+
+void CommandPrint(HNode* HNode) {
+	int lvl = HNode->level;
+
+	if (HNode->isRoot)
+		cout << "Root"<<endl;
+	cout << "#" << HNode->NodeNumber << " level: " << lvl << " # slots: "
+			<< HNode->numEntry << ", Avail: " << MaxEntry - HNode->numEntry
+			<< endl;
+	cout << "\tbp: <     ";
+
+	for (int i = 0; i < dim * 2; i++) {
+		if (HNode->bp[i] == DBL_MAX)
+			cout << "* ";
+		else
+			cout << HNode->bp[i] << " ";
+	}
+	cout << ">\n";
+
+	for (int i = 0; i < HNode->numEntry; i++) {
+		cout << "\t[" << i << "] <";
+		cout << " bp: ";
+		for (int j = 0; j < dim * 2; j++) {
+			if ((double) HNode->entries[i].bp[j] == DBL_MAX)
+				cout << "* ";
+			else
+				cout << (double) HNode->entries[i].bp[j] << " ";
+		}
+		cout << " >";
+		if (lvl == 1)
+			cout << " data: " << HNode->entries[i].data << endl;
+		else
+			cout << " child: " << HNode->entries[i].child->numEntry << endl;
+	}
+	return;
+}
+
