@@ -214,6 +214,8 @@ bool Verify(HNode* HNode, int currentTime) {
 					if (isVerifyTree){
 						cout << "Verify:: _isAliveBPCorrectEntry  i = " <<i<<" level = "<<HNode->level <<endl;
 						CommandPrint(HNode);
+						cout << "////////////////" << endl;
+						CommandPrint(HNode->entries[i].child);
 					}
 					flag = false;
 				}

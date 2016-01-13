@@ -85,7 +85,7 @@ int main(int argc, char *argv[]){
 			}
 			key[5] = DBL_MAX;
 			CommandInsert(key, id, sizeof(int), RT);
-			cout<< id << " is Inserted"<<endl;
+			//cout<< id << " is Inserted"<<endl;
 		}
 
 		/*
@@ -144,8 +144,9 @@ int main(int argc, char *argv[]){
 				cout << "\n\n\n\nError in VerifyTree\n\n\n\n" << endl;
 				//CommandView(RT);
 				break;
-			}else
-				cout<<"Verified."<<endl;
+			}else{
+				//	cout<<"Verified."<<endl;
+			}
 		}
 
 	}

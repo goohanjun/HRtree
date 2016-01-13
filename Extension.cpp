@@ -100,7 +100,7 @@ int Delete(HNode* root, double* key, int data, int dlen, RootTable* RT) {
 		//status == 1 , nNode1 need to be inserted in ParentNode. status == 2 , nNode1,2 need to be inserted in ParentNode
 		statusUF = _TreatUnderflow(Stack->trace[1], leaf, Stack, nNode1, nNode2, currentTime);
 		//if (isPrintDelete){			cout << "lvl :" << leaf->level << " Leaf Underflow  status="	<< statusUF << endl;		}
-		//cout<<"leafNode TreatUnderflow"<<endl; 		if(statusUF>0)	_printNode(nNode1); 		if(statusUF>1)	_printNode(nNode2);
+		cout<<"leafNode TreatUnderflow"<<endl; 		if(statusUF>0)	_printNode(nNode1); 		if(statusUF>1)	_printNode(nNode2);
 	}
 
 	//if (statusUF == 1 && isPrintDelete) {		cout << "After Leaf TreatUnderflow" << endl;		_printNode(Stack->trace[1]);	}
@@ -108,6 +108,7 @@ int Delete(HNode* root, double* key, int data, int dlen, RootTable* RT) {
 		HNode *nNode3, *nNode4, *oNode1, *oNode2;
 		// Fit in
 		if( Stack->trace[i]->numEntry + statusUF + 1 < MaxEntry ){
+			cout<<"lvl : "<<Stack->trace[i]->level<<" Fit in  statusUF :"<<statusUF<<endl;
 			if( statusUF >0 ) // Insert nNode1
 				_InsertEntry( Stack->trace[i] , nNode1 );
 			if(statusUF ==2) // Insert nNode2
