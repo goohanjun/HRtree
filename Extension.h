@@ -26,7 +26,7 @@ int Search(HNode* root, double* key, int data, int dlen, HNode* Root[], int & nu
 // Insertion
 HNode* _ChooseSubtree(HNode* self, stack* st, double* key, int data);
 int _TreatOverflow(HNode* self, stack* Stack, HNode* nNode1, HNode* nNode2, HNode*& outNode1, HNode*& outNode2, int status, RootTable* RT, double tnow);
-
+int _TreatOverflow2(HNode* self, stack* Stack, HNode* nNode1, HNode* nNode2, HNode*& outNode1, HNode*& outNode2, int status, RootTable* RT, double tnow);
 // General
 bool _isKeySplit(pCursor *cursor, double currentTime);
 void _RemoveEntry(HNode *self , stack *Stack, double tnow);

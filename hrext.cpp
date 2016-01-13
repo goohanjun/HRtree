@@ -236,6 +236,35 @@ bool hr_rect::expand(double * key) { //Expand the area only.
 	return flag;
 }
 
+bool hr_rect::expandTime(double * key) { //Expand the Time only.
+	bool flag = false;
+	if (coord[0] > key[0]) {
+		flag = true;
+		coord[0] = key[0];
+	}
+	if (coord[1] > key[1]) {
+		flag = true;
+		coord[1] = key[1];
+	}
+	if (coord[2] < key[2]) {
+		flag = true;
+		coord[2] = key[2];
+	}
+	if (coord[3] < key[3]) {
+		flag = true;
+		coord[3] = key[3];
+	}
+	if (coord[4] > key[4]) {
+		flag = true;
+		coord[4] = key[4];
+	}
+	if (coord[5] < key[5]) {
+		flag = true;
+		coord[5] = key[5];
+	}
+	return flag;
+}
+
 void hr_rect::copyRect(double *key) {
 	int i;
 	for(i=0;i<dimension*2;i++){

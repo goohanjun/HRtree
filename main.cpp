@@ -37,7 +37,9 @@ using std::set;
 using std::string;
 
 int main(int argc, char *argv[]){
-	/*
+
+
+
 
 	if(argc !=2) {
 		cout<<"Error : No input\n";
@@ -50,18 +52,16 @@ int main(int argc, char *argv[]){
 	sprintf( buf, "result.out" );
 	FILE *fout = fopen( buf, "w" );
 
-	 */
+	/*
 	char buf[1024];
-	//FILE *fin = fopen( "res/hr_input_10.txt", "r" );
-	FILE *fin = fopen( "input_1.txt", "r" );
+	FILE *fin = fopen( "res/hr_input_0_S0.txt", "r" );
+	//FILE *fin = fopen( "input_3D", "r" );
 	FILE *fout = fopen( "result.out", "w" );
-
+	*/
 	int nObj;
 	fscanf( fin, "%d", &nObj );
+
 	set<int> ans;
-
-	cout << "Starting HR+Tree.." << endl;
-
 	RootTable *RT = new RootTable();
 	RT->Root[0]->bp[5]=DBL_MAX; // First root is alive
 
@@ -94,14 +94,19 @@ int main(int argc, char *argv[]){
 		 * Data = Object_ID
 		 */
 		else if ( strcmp( buf, "Delete" ) == 0 ) {
-			CommandView(RT);
+			if(isPrintDelete)
+				CommandDump(RT->Root[RT->numRoot-1]);
 			fscanf( fin, "%d", &id );
+			//31cout<< id << " is Deleting at "<<key[4]<<endl;
 			for ( int i=0; i<4; ++i ) {
 				fscanf( fin, "%s", buf );
 				key[i] = atof(buf);
 			}
 			CommandDelete( key, id, sizeof(int), RT);
-			cout<< id << " is Deleted"<<endl;
+			if(isPrintDelete){
+				cout<< id << " is Deleted at "<<key[4]<<endl;
+				CommandDump(RT->Root[RT->numRoot-1]);
+			}
 		}
 
 		else if (strcmp( buf, "Search" ) == 0 ) {
@@ -132,17 +137,17 @@ int main(int argc, char *argv[]){
 		else if ( strcmp( buf, "Stop" ) == 0 ) {
 			break;
 		}
-
-		if(!CommandVerifyTree(RT, (int) key[4]))
-			cout<<"Error in VerifyTree"<<endl;
 		/*
-		if(id==16 || id ==15){
-			cout<<id <<endl;
+		if(!CommandVerifyTree(RT, (int) key[4])){
+			cout<<"Error in VerifyTree"<<endl;
 			CommandView(RT);
+			break;
 		}
+				//CommandView(RT);
 		*/
+
 	}
-	CommandView(RT);
+	//CommandView(RT);
 	cout<<"Done!"<<endl;
 	fclose(fin);
 	fclose(fout);

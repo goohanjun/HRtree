@@ -26,7 +26,6 @@ int CommandInsert(double* key, int data, int dlen, RootTable* RT) {
 		}
 	}
 	return 1;
-
 }
 
 int CommandDelete(double* key, int data, int dlen, RootTable* RT) {
@@ -49,24 +48,17 @@ void CommandTimeStamp(RootTable *RT, double *key,int data,set<int>* ans, int sta
 			//numRootVisited++;
 		}
 	}
-
 	//cout<<numRootVisited <<" many roots were visited"<<endl;
 	// status == 1
 	// Search only included region
-
-
 }
 
 void CommandTimeIntv(RootTable *RT, double *key,int data,set<int>* ans, int status) {
 	// status == 0
 	// Search all of overlapped region
 
-
-
 	// status == 1
 	// Search only included region
-
-
 }
 
 void _SearchObject(HNode *Node, double *key, set<int>* object, int Time) { // Timestamp Query to all region
@@ -162,7 +154,12 @@ bool CommandVerifyTree(RootTable *RT, int currentTime){
 	//cout<<"Command Verify:: # of Root = "<<RT->numRoot<<endl;
 	bool flag = true;
 	for(int i = 0; i< RT->numRoot; i++){
-		flag = flag*VerifyRootNode(RT->Root[i],currentTime);
+		if(VerifyRootNode(RT->Root[i],currentTime))
+			flag = flag *true;
+		else{
+			flag = false;
+			cout<< i <<"th Root has Error"<<endl;
+		}
 	}
 	return flag;
 }
@@ -198,12 +195,12 @@ bool Verify(HNode* HNode, int currentTime) {
 	if (HNode->bp[5] == DBL_MAX) { // If this Node is Alive
 		if (!_isAliveBPCorrectNode(HNode)) {
 			if (isVerifyTree)
-				cout << "Verify:: _isAliveBPCorrectNode" << endl;
+				cout << "Verify:: _isAliveBPCorrectNode  lvl = " << HNode->level<<endl;
 			flag = false;
 		}
 	} else if (!_isDeadBPCorrectNode(HNode, currentTime)) {
 		if (isVerifyTree)
-			cout << "Verify:: _isDeadBPCorrectNode" << endl;
+			cout << "Verify:: _isDeadBPCorrectNode   lvl = " << HNode->level<<endl;
 		flag = false;
 	}
 	if (HNode->level > 1) {
@@ -211,14 +208,14 @@ bool Verify(HNode* HNode, int currentTime) {
 			if (HNode->entries[i].bp[5] == DBL_MAX) { // If this entry is Alive
 				if (!_isAliveBPCorrectEntry(&HNode->entries[i], currentTime)) {
 					if (isVerifyTree)
-						cout << "Verify:: _isAliveBPCorrectEntry  i = " <<i <<endl;
+						cout << "Verify:: _isAliveBPCorrectEntry  i = " <<i<<" level = "<<HNode->level <<endl;
 					flag = false;
 				}
 			} else if (!_isDeadBPCorrectEntry(&HNode->entries[i],
 					currentTime)) {
 				flag = false;
 				if (isVerifyTree) {
-					cout << "Verify:: _isDeadBPCorrectEntry  i = " << i << endl;
+					cout << "Verify:: _isDeadBPCorrectEntry  i = " << i<<" level = "<<HNode->level <<endl;
 					CommandPrint(HNode);
 					cout << "////////////////" << endl;
 					CommandPrint(HNode->entries[i].child);

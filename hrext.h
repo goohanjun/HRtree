@@ -43,6 +43,7 @@ public:
 
 	bool expand( hr_rect *k );
 	bool expand( double * key);
+	bool expandTime( double * key);
 	double intersect ( hr_rect *k);
 	double overlap (hr_rect *k);
 	bool isOverlap(double *key);
