@@ -40,7 +40,7 @@ int main(int argc, char *argv[]){
 
 
 
-
+	/*
 	if(argc !=2) {
 		cout<<"Error : No input\n";
 		exit(1);
@@ -51,13 +51,13 @@ int main(int argc, char *argv[]){
 	sprintf( buf, "%s", argv[1] );
 	sprintf( buf, "result.out" );
 	FILE *fout = fopen( buf, "w" );
+*/
 
-	/*
 	char buf[1024];
-	FILE *fin = fopen( "res/hr_input_0_S0.txt", "r" );
+	FILE *fin = fopen( "input_1.txt", "r" );
 	//FILE *fin = fopen( "input_3D", "r" );
 	FILE *fout = fopen( "result.out", "w" );
-	*/
+
 	int nObj;
 	fscanf( fin, "%d", &nObj );
 
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]){
 			}
 			key[5] = DBL_MAX;
 			CommandInsert(key, id, sizeof(int), RT);
-			//cout<< id << " is Inserted"<<endl;
+			cout<< id << " is Inserted"<<endl;
 		}
 
 		/*
@@ -94,10 +94,12 @@ int main(int argc, char *argv[]){
 		 * Data = Object_ID
 		 */
 		else if ( strcmp( buf, "Delete" ) == 0 ) {
+			/*
 			if(isPrintDelete)
 				CommandDump(RT->Root[RT->numRoot-1]);
+				*/
 			fscanf( fin, "%d", &id );
-			//31cout<< id << " is Deleting at "<<key[4]<<endl;
+			cout<<"\n"<< id << " is Deleting at "<<key[4]<<endl;
 			for ( int i=0; i<4; ++i ) {
 				fscanf( fin, "%s", buf );
 				key[i] = atof(buf);
@@ -105,7 +107,7 @@ int main(int argc, char *argv[]){
 			CommandDelete( key, id, sizeof(int), RT);
 			if(isPrintDelete){
 				cout<< id << " is Deleted at "<<key[4]<<endl;
-				CommandDump(RT->Root[RT->numRoot-1]);
+				//CommandDump(RT->Root[RT->numRoot-1]);
 			}
 		}
 
@@ -137,14 +139,14 @@ int main(int argc, char *argv[]){
 		else if ( strcmp( buf, "Stop" ) == 0 ) {
 			break;
 		}
-		/*
-		if(!CommandVerifyTree(RT, (int) key[4])){
-			cout<<"Error in VerifyTree"<<endl;
-			CommandView(RT);
-			break;
-		}
+		if (isVerifyTree) {
+			if (!CommandVerifyTree(RT, (int) key[4])) {
+				cout << "\n\n\n\nError in VerifyTree\n\n\n\n" << endl;
 				//CommandView(RT);
-		*/
+				break;
+			}else
+				cout<<"Verified."<<endl;
+		}
 
 	}
 	//CommandView(RT);

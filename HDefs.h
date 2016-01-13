@@ -35,7 +35,7 @@
 #define isPrintOverflow 0 // TreatOverflow
 
 //Deletion
-#define isPrintDelete 0
+#define isPrintDelete 1
 
 //Split
 #define isPrintSplit 0 //Key, Version, SVO Splits
@@ -44,6 +44,6 @@
 
 //Print
 #define isVerifyAnswer 0
-#define isVerifyTree 0
+#define isVerifyTree 1
 
 #endif /* SRC_HR_DEFS_H_ */

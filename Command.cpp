@@ -32,7 +32,7 @@ int CommandDelete(double* key, int data, int dlen, RootTable* RT) {
 	if (Delete(RT->Root[RT->numRoot-1], key, data, dlen, RT)) {
 		return 1;
 	} else {
-		cerr << "Deletion is Failed, id = " << data << endl;
+		cout << "Deletion is Failed, id = " << data << endl;
 		return 0;
 	}
 }
@@ -158,7 +158,7 @@ bool CommandVerifyTree(RootTable *RT, int currentTime){
 			flag = flag *true;
 		else{
 			flag = false;
-			cout<< i <<"th Root has Error"<<endl;
+			cout<< i <<"th Root has Error /"<<RT->numRoot-1<<endl;
 		}
 	}
 	return flag;
@@ -194,21 +194,27 @@ bool Verify(HNode* HNode, int currentTime) {
 	}
 	if (HNode->bp[5] == DBL_MAX) { // If this Node is Alive
 		if (!_isAliveBPCorrectNode(HNode)) {
-			if (isVerifyTree)
+			if (isVerifyTree){
 				cout << "Verify:: _isAliveBPCorrectNode  lvl = " << HNode->level<<endl;
+				CommandPrint(HNode);
+			}
 			flag = false;
 		}
 	} else if (!_isDeadBPCorrectNode(HNode, currentTime)) {
-		if (isVerifyTree)
+		if (isVerifyTree){
 			cout << "Verify:: _isDeadBPCorrectNode   lvl = " << HNode->level<<endl;
+			CommandPrint(HNode);
+		}
 		flag = false;
 	}
 	if (HNode->level > 1) {
 		for (int i = 0; i < HNode->numEntry; i++) {
 			if (HNode->entries[i].bp[5] == DBL_MAX) { // If this entry is Alive
 				if (!_isAliveBPCorrectEntry(&HNode->entries[i], currentTime)) {
-					if (isVerifyTree)
+					if (isVerifyTree){
 						cout << "Verify:: _isAliveBPCorrectEntry  i = " <<i<<" level = "<<HNode->level <<endl;
+						CommandPrint(HNode);
+					}
 					flag = false;
 				}
 			} else if (!_isDeadBPCorrectEntry(&HNode->entries[i],
