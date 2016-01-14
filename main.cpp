@@ -99,12 +99,14 @@ int main(int argc, char *argv[]){
 				CommandDump(RT->Root[RT->numRoot-1]);
 				*/
 			fscanf( fin, "%d", &id );
-			cout<<"\n"<< id << " is Deleting at "<<key[4]<<endl;
+			cout<< id << " is Deleting at "<<key[4]<<endl;
 			for ( int i=0; i<4; ++i ) {
 				fscanf( fin, "%s", buf );
 				key[i] = atof(buf);
 			}
-			CommandDelete( key, id, sizeof(int), RT);
+			if (! CommandDelete( key, id, sizeof(int), RT)){
+				break;
+			}
 			if(isPrintDelete){
 				cout<< id << " is Deleted at "<<key[4]<<endl;
 				//CommandDump(RT->Root[RT->numRoot-1]);
@@ -142,6 +144,7 @@ int main(int argc, char *argv[]){
 		if (isVerifyTree) {
 			if (!CommandVerifyTree(RT, (int) key[4])) {
 				cout << "\n\n\n\nError in VerifyTree\n\n\n\n" << endl;
+				//CommandDump(RT->Root[RT->numRoot-1]);
 				//CommandView(RT);
 				break;
 			}else{
