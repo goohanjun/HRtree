@@ -29,9 +29,10 @@ int _TreatOverflow(HNode* self, stack* Stack, HNode* nNode1, HNode* nNode2, HNod
 int _TreatOverflow2(HNode* self, stack* Stack, HNode* nNode1, HNode* nNode2, HNode*& outNode1, HNode*& outNode2, int status, RootTable* RT, double tnow);
 
 // General
-bool _isKeySplit(pCursor *cursor, double currentTime);
+bool _isKeySplit(pCursor *cursor);
 void _RemoveEntry(HNode *self , stack *Stack, double tnow);
 bool _calcAliveNewBP( HNode *nNode, double *newKey );
+bool _calcDeadNewBP( HNode *nNode, double *newKey );
 void _InsertEntry(HNode *nNode, HNode *child);
 
 //key Split

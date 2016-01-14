@@ -110,13 +110,10 @@ bool CommandVerify(RootTable *RT, set<int>* answers[],int ElapsedTime) {
 bool CommandVerifyAnswer(RootTable *RT, set<int>* answers[], int ElapsedTime){
 	bool flag = true;
 	for (int i = 0; i < ElapsedTime + 1; i++) {
-
 		//Debug
 		if (isVerifyAnswer)
 			cout<<"Time :" <<i<<" Answer Verfication"<<endl;
-
 		set<int> *object = new set<int>;
-
 		for (int j = 0; j < RT->numRoot; j++) {
 			if (i >= RT->Root[j]->bp[4])
 				_SearchObject(RT->Root[j], object,i);
@@ -154,11 +151,13 @@ bool CommandVerifyTree(RootTable *RT, int currentTime){
 	//cout<<"Command Verify:: # of Root = "<<RT->numRoot<<endl;
 	bool flag = true;
 	for(int i = 0; i< RT->numRoot; i++){
-		if(VerifyRootNode(RT->Root[i],currentTime))
-			flag = flag *true;
-		else{
-			flag = false;
-			cout<< i <<"th Root has Error /"<<RT->numRoot-1<<endl;
+		if (RT->Root[i]->numEntry > 0) {
+			if (VerifyRootNode(RT->Root[i], currentTime))
+				flag = flag * true;
+			else {
+				flag = false;
+				cout << i << "th Root has Error /" << RT->numRoot - 1 << endl;
+			}
 		}
 	}
 	return flag;

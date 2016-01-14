@@ -36,6 +36,8 @@
 
 //Deletion
 #define isPrintDelete 1
+#define isPrintRootInterval 0
+#define isFindLeaf 1
 
 //Split
 #define isPrintSplit 0 //Key, Version, SVO Splits

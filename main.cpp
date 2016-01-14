@@ -41,6 +41,7 @@ int main(int argc, char *argv[]){
 
 
 	/*
+
 	if(argc !=2) {
 		cout<<"Error : No input\n";
 		exit(1);
@@ -51,10 +52,9 @@ int main(int argc, char *argv[]){
 	sprintf( buf, "%s", argv[1] );
 	sprintf( buf, "result.out" );
 	FILE *fout = fopen( buf, "w" );
-*/
-
+	*/
 	char buf[1024];
-	FILE *fin = fopen( "input_1.txt", "r" );
+	FILE *fin = fopen( "input_3", "r" );
 	//FILE *fin = fopen( "input_3D", "r" );
 	FILE *fout = fopen( "result.out", "w" );
 
@@ -105,10 +105,16 @@ int main(int argc, char *argv[]){
 				key[i] = atof(buf);
 			}
 			if (! CommandDelete( key, id, sizeof(int), RT)){
+				//CommandDump(RT->Root[RT->numRoot-2]);
+				break;
+
+			}
+			if(id==80){
+				CommandDump(RT->Root[RT->numRoot-1]);
 				break;
 			}
 			if(isPrintDelete){
-				cout<< id << " is Deleted at "<<key[4]<<endl;
+				//cout<< id << " is Deleted at "<<key[4]<<endl;
 				//CommandDump(RT->Root[RT->numRoot-1]);
 			}
 		}
@@ -153,6 +159,11 @@ int main(int argc, char *argv[]){
 		}
 
 	}
+	if (isPrintRootInterval) {
+		for (int i = 0; i < RT->numRoot; i++)
+			cout << "[" << RT->Root[i]->bp[4] << " , " << RT->Root[i]->bp[5]<< "]" << endl;
+	}
+
 	//CommandView(RT);
 	cout<<"Done!"<<endl;
 	fclose(fin);
