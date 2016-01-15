@@ -38,9 +38,7 @@ public:
 	bool isInclude(double* key);
 	bool isIncluded(double* key);
 	bool isNew( hr_rect *k );
-
 	void copyRect(double *key);
-
 	bool expand( hr_rect *k );
 	bool expand( double * key);
 	bool expandTime( double * key);
@@ -52,7 +50,6 @@ public:
 	double dist(hr_rect *j);
 	double & lo( int d );
 	double & hi( int d );
-
 	bool isTimeOverlap(double *bp);
 private:
 };
@@ -60,7 +57,6 @@ private:
 double findPen_over(hr_rect *j, hr_rect *k);
 
 double findPen_span(hr_rect *j, hr_rect *k);
-
 
 
 #endif /* SRC_HREXT_H_ */

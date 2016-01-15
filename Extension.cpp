@@ -79,7 +79,7 @@ int Delete(HNode* root, double* key, int data, int dlen, RootTable* RT) {
 	Stack->depth = root->level;
 	//Debug
 	if (isPrintDelete) {
-		cout << "<<<<<< S T A C K >>>>>>>\n" << endl;	_printStack(Stack);
+		cout << "\n<<<<<< S T A C K >>>>>>>" << endl;	_printStack(Stack);
 		for (int i = 0; i < Stack->depth; i++) {
 			if (Stack->isChanged[i] == true)			cout << i << " : O > ";
 			else			cout << i << " : X > ";
@@ -92,7 +92,7 @@ int Delete(HNode* root, double* key, int data, int dlen, RootTable* RT) {
 	// Leaf Underflow
 	// status == 1 , nNode1 need to be inserted in ParentNode. status == 2 , nNode1,2 need to be inserted in ParentNode
 	if (leaf->_numAlive() < UF_Ratio * MaxEntry) {
-		statusUF = _TreatUnderflow(Stack->trace[1], leaf, Stack, nNode1, nNode2, currentTime);
+		statusUF = _TreatUnderflow(Stack->trace[1], leaf, Stack, nNode1, nNode2, currentTime,true);
 		//if (isPrintDelete){			cout << "lvl :" << leaf->level << " Leaf Underflow  status="	<< statusUF << endl;		}
 		if (isPrintDelete) {
 		cout<<"Leaf Underflow. status ="<<statusUF<<endl;
@@ -111,12 +111,10 @@ int Delete(HNode* root, double* key, int data, int dlen, RootTable* RT) {
 			if (isPrintDelete)
 				cout<<"lvl : "<<Stack->trace[i]->level<<"   Fit in    statusUF :"<<statusUF<<endl;
 
-			if( statusUF >0 ){ // Insert nNode1
-				_InsertEntry( Stack->trace[i] , nNode1 );
-			}
-			if(statusUF ==2){ // Insert nNode2
-				_InsertEntry( Stack->trace[i] , nNode2 );
-			}
+			// Insert nNode1
+			if( statusUF >0 ){ _InsertEntry( Stack->trace[i] , nNode1 );}
+			// Insert nNode2
+			if(statusUF ==2){ _InsertEntry( Stack->trace[i] , nNode2 );}
 
 			if (isPrintDelete)
 				_printNode(Stack->trace[i]);
@@ -162,7 +160,7 @@ int Delete(HNode* root, double* key, int data, int dlen, RootTable* RT) {
 					cout << "Child Node" << endl;
 					_printNode(Stack->trace[i]);
 				}
-				statusUF = _TreatUnderflow(Stack->trace[i + 1], Stack->trace[i],Stack, nNode3, nNode4, currentTime);
+				statusUF = _TreatUnderflow(Stack->trace[i + 1], Stack->trace[i],Stack, nNode3, nNode4, currentTime, true);
 				nNode1 = nNode3; nNode2 = nNode4;
 				if (isPrintDelete) {
 					cout << "Parent Node" << endl;
@@ -248,7 +246,7 @@ int Delete(HNode* root, double* key, int data, int dlen, RootTable* RT) {
 
 			if (statusOF == 2 	&& (oNode1->_numAlive() + 1) < UF_Ratio * MaxEntry) { // VersionSplit
 				//Stack->trace[i] 가 UF 되는데, nNode1, nNode2로 합쳐지고 (쪼개져서) 나오는 함수.
-				statusUF = _TreatUnderflow(Stack->trace[i + 1], oNode1, Stack,	nNode3, nNode4, currentTime);
+				statusUF = _TreatUnderflow(Stack->trace[i + 1], oNode1, Stack,	nNode3, nNode4, currentTime,false);
 				nNode1 = nNode3; nNode2 = nNode4;
 				if (isPrintDelete){			cout << "lvl :" << Stack->trace[i]->level << "  Underflow 2 (After VersionSplit of Oveflow) statusUF = "<< statusUF << endl;			}
 			}
@@ -432,8 +430,7 @@ bool _FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key, int data,
 	return false;
 }
 
-int _TreatUnderflow(HNode* Parent, HNode* self, stack *st, HNode*& Node1,
-		HNode*& Node2, double currentTime) {
+int _TreatUnderflow(HNode* Parent, HNode* self, stack *st, HNode*& Node1, HNode*& Node2, double currentTime, bool isFromParent) {
 
 	int status = 0;
 	int index = 0; // From parent to MergeNode
@@ -463,10 +460,12 @@ int _TreatUnderflow(HNode* Parent, HNode* self, stack *st, HNode*& Node1,
 
 	// Find an alive node that give minimum area enlargement
 	HNode *MergeNode = Parent->entries[index].child;
-	cout<<"_TreatUnderflow Node1"<<endl;
-	_printNode(self);
-	cout<<"_TreatUnderflow Node2"<<endl;
-	_printNode(MergeNode);
+	if (isPrintDelete) {
+		cout << "_TreatUnderflow Node1" << endl;
+		_printNode(self);
+		cout << "_TreatUnderflow Node2" << endl;
+		_printNode(MergeNode);
+	}
 	//Debug
 	if (MergeNode->bp[5] != DBL_MAX){
 		cout << "ERROR! in TreatUnderflow Merging Step" << endl;
@@ -474,16 +473,19 @@ int _TreatUnderflow(HNode* Parent, HNode* self, stack *st, HNode*& Node1,
 	}
 
 	pCursor *cursor = new pCursor();
-
-
 	// Delete the Node & Make cursor
-	if( indexToSelf == Parent->numEntry-1 ){
-		_deleteNode(Parent, self, cursor, indexToSelf, currentTime);
+	if (isFromParent == true) {
+		if (indexToSelf == Parent->numEntry - 1) {
+			_deleteNode(Parent, self, cursor, indexToSelf, currentTime);
+			_deleteNode(Parent, MergeNode, cursor, index, currentTime);
+		} else {
+			_deleteNode(Parent, MergeNode, cursor, index, currentTime);
+			_deleteNode(Parent, self, cursor, indexToSelf, currentTime);
+		}
+	} else {
 		_deleteNode(Parent, MergeNode, cursor, index, currentTime);
-	}
-	else{
-		_deleteNode(Parent, MergeNode, cursor, index, currentTime);
-		_deleteNode(Parent, self, cursor, indexToSelf, currentTime);
+		cursor->InsertNode(self); // Self is from version Split.
+		delete self;
 	}
 
 	if (cursor->size < MaxEntry * SVO_Ratio) { //Merge
@@ -582,7 +584,7 @@ int _TreatOverflow2(HNode* self, stack* Stack, HNode* nNode1, HNode* nNode2,
 		cursor->InsertEntry(nNode2); // put entry into cursor
 	int rightEntries[cursor->size];
 
-	isKeySplit = _isKeySplit(cursor);
+	isKeySplit = _isKeySplit(cursor, tnow);
 
 	if (isKeySplit) { //KeySplit
 		//cerr << "\n\n\n Deletion KeySplit?!?!!?!\n\n\n\n" << endl;
@@ -810,7 +812,7 @@ int _TreatOverflow(HNode* self, stack* Stack, HNode* nNode1, HNode* nNode2,
 			cursor->InsertEntry(nNode2); // put entry into cursor
 		int rightEntries[cursor->size];
 
-		isKeySplit = _isKeySplit(cursor);
+		isKeySplit = _isKeySplit(cursor, tnow);
 
 		if (isKeySplit) { //KeySplit
 			if (isPrintOverflow)
@@ -1037,10 +1039,10 @@ void _SVOSplitNode(RootTable* RT, pCursor *cursor, HNode* self,
 	delete kcursor;
 }
 
-bool _isKeySplit(pCursor *cursor) {
+bool _isKeySplit(pCursor *cursor,double tnow) {
 	bool flag = true;
 	for (int i = 0; i < cursor->size; i++) {
-		if (cursor->entries[i].bp[4] != cursor->entries[0].bp[4])
+		if (cursor->entries[i].bp[4] != tnow)
 			flag = false;
 	}
 	return flag;

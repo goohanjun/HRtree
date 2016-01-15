@@ -16,9 +16,11 @@ class stack {
 public:
 	stack();
 	virtual ~stack();
+
 	bool isChanged[MAX_STACK_SIZE];
 	int choice[MAX_STACK_SIZE];
 	HNode* trace[MAX_STACK_SIZE];
+
 	int depth; //Actual depth
 	int curr; //Current depth
 };

@@ -29,7 +29,7 @@ int _TreatOverflow(HNode* self, stack* Stack, HNode* nNode1, HNode* nNode2, HNod
 int _TreatOverflow2(HNode* self, stack* Stack, HNode* nNode1, HNode* nNode2, HNode*& outNode1, HNode*& outNode2, int status, RootTable* RT, double tnow);
 
 // General
-bool _isKeySplit(pCursor *cursor);
+bool _isKeySplit(pCursor *cursor, double tnow);
 void _RemoveEntry(HNode *self , stack *Stack, double tnow);
 bool _calcAliveNewBP( HNode *nNode, double *newKey );
 bool _calcDeadNewBP( HNode *nNode, double *newKey );
@@ -48,7 +48,7 @@ void _keySplitSVO(RootTable* RT, HNode* self, pCursor *cursor, int rightE[], int
 
 // Deletion
 bool _FindLeaf(HNode* Node,HNode *&leaf,stack *Stack, double* key,int data, double currentTime);
-int _TreatUnderflow(HNode* Parent,HNode* self,stack *st,HNode*& Node1, HNode*& Node2, double currentTime);
+int _TreatUnderflow(HNode* Parent,HNode* self,stack *st,HNode*& Node1, HNode*& Node2, double currentTime, bool isFromParent);
 bool _deleteNode(HNode* Parent,HNode* self,pCursor *cursor,int indexToSelf, double currentTime);
 
 //Search

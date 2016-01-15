@@ -38,27 +38,52 @@ int CommandDelete(double* key, int data, int dlen, RootTable* RT) {
 }
 
 void CommandTimeStamp(RootTable *RT, double *key,int data,set<int>* ans, int status) {
-	// status == 0
-	// Search all of overlapped region
-	double queryTime = key[4]; //||key[5]
-	//int numRootVisited=0;
-	for (int i = 0;i<RT->numRoot;i++){
-		if( RT->Root[i]->bp[4] <= queryTime &&  queryTime < RT->Root[i]->bp[5] ){
-			_SearchObject(RT->Root[i], key, ans,queryTime);
-			//numRootVisited++;
+	if (status == 0) {
+		// status == 0
+		// Search all of overlapped region
+		double queryTime = key[4]; //||key[5]
+
+		for (int i = 0; i < RT->numRoot; i++) {
+			if (RT->Root[i]->bp[4] <= queryTime	&& queryTime < RT->Root[i]->bp[5]) {
+				_SearchObject(RT->Root[i], key, ans, queryTime);
+			}
+		}
+	} else {
+		// status == 1
+		// Search only included region
+		double queryTime = key[4]; //||key[5]
+
+		for (int i = 0; i < RT->numRoot; i++) {
+			if (RT->Root[i]->bp[4] <= queryTime	&& queryTime < RT->Root[i]->bp[5]) {
+				_SearchObject(RT->Root[i], key, ans, queryTime);
+
+			}
 		}
 	}
-	//cout<<numRootVisited <<" many roots were visited"<<endl;
-	// status == 1
-	// Search only included region
 }
 
 void CommandTimeIntv(RootTable *RT, double *key,int data,set<int>* ans, int status) {
-	// status == 0
-	// Search all of overlapped region
+	if(status==0){
+		// status == 0
+		// Search all of overlapped region
+		double queryTime = key[4]; //||key[5]
+		for (int i = 0; i < RT->numRoot; i++) {
+			if (RT->Root[i]->bp[4] <= queryTime	&& queryTime < RT->Root[i]->bp[5]) {
+				_SearchObject(RT->Root[i], key, ans, queryTime);
 
-	// status == 1
-	// Search only included region
+			}
+		}
+	}
+	else{
+		// status == 1
+		// Search only included region
+		double queryTime = key[4]; //||key[5]
+		for (int i = 0; i < RT->numRoot; i++) {
+			if (RT->Root[i]->bp[4] <= queryTime	&& queryTime < RT->Root[i]->bp[5]) {
+				_SearchObject(RT->Root[i], key, ans, queryTime);
+			}
+		}
+	}
 }
 
 void _SearchObject(HNode *Node, double *key, set<int>* object, int Time) { // Timestamp Query to all region
@@ -107,48 +132,7 @@ bool CommandVerify(RootTable *RT, set<int>* answers[],int ElapsedTime) {
 	return isCorrect;
 }
 
-bool CommandVerifyAnswer(RootTable *RT, set<int>* answers[], int ElapsedTime){
-	bool flag = true;
-	for (int i = 0; i < ElapsedTime + 1; i++) {
-		//Debug
-		if (isVerifyAnswer)
-			cout<<"Time :" <<i<<" Answer Verfication"<<endl;
-		set<int> *object = new set<int>;
-		for (int j = 0; j < RT->numRoot; j++) {
-			if (i >= RT->Root[j]->bp[4])
-				_SearchObject(RT->Root[j], object,i);
-		}
-		flag = flag * _CompareSet(answers[i], object);
-
-		delete object;
-	}
-	return flag;
-}
-
-bool _CompareSet(set<int>* answer, set<int>* object){
-	bool isSame = true;
-	set<int>::iterator it, it1, it2;
-	if (answer->size() != object->size()){
-		if (isVerifyAnswer) {
-			cout << "Answer set Size = " << answer->size() << endl;
-			for (it=answer->begin(); it!=answer->end(); ++it)
-				cout<<*it<<" ";
-			cout << "\nObject set Size = " << object->size() << endl;
-			for (it = object->begin(); it != object->end(); ++it)
-				cout << *it << " ";
-			cout<<endl;
-		}
-		isSame = false;
-	}
-	for(it1=answer->begin() , it2 = object->begin(); it1 !=answer->end() , it2 != object->end() ; ++it1 , ++it2){
-		if(*it1 != *it2)
-			isSame = false;
-	}
-	return isSame;
-}
-
 bool CommandVerifyTree(RootTable *RT, int currentTime){
-	//cout<<"Command Verify:: # of Root = "<<RT->numRoot<<endl;
 	bool flag = true;
 	for(int i = 0; i< RT->numRoot; i++){
 		if (RT->Root[i]->numEntry > 0) {
@@ -156,7 +140,7 @@ bool CommandVerifyTree(RootTable *RT, int currentTime){
 				flag = flag * true;
 			else {
 				flag = false;
-				cout << i << "th Root has Error /" << RT->numRoot - 1 << endl;
+				cout << i + 1 << "th Root has Error /" << RT->numRoot << endl;
 			}
 		}
 	}
@@ -169,7 +153,6 @@ bool VerifyRootNode(HNode* HNode, int currentTime){
 		if (isVerifyTree)
 			cout << "Verify:: Something is wrong in this tree" << endl;
 		flag = false;
-		//CommandPrint(HNode);
 	}
 	if (HNode->level > 1) {
 		for (int i = 0; i < HNode->numEntry; i++) {
@@ -233,7 +216,6 @@ bool Verify(HNode* HNode, int currentTime) {
 	return flag;
 }
 
-
 //Print Roots
 void CommandView(RootTable* RT) {
 	for(int i = 0;i<RT->numRoot;i++){
@@ -286,3 +268,43 @@ void CommandPrint(HNode* HNode) {
 	return;
 }
 
+//Deprecated
+bool CommandVerifyAnswer(RootTable *RT, set<int>* answers[], int ElapsedTime){
+	bool flag = true;
+	for (int i = 0; i < ElapsedTime + 1; i++) {
+		//Debug
+		if (isVerifyAnswer)
+			cout<<"Time :" <<i<<" Answer Verfication"<<endl;
+		set<int> *object = new set<int>;
+		for (int j = 0; j < RT->numRoot; j++) {
+			if (i >= RT->Root[j]->bp[4])
+				_SearchObject(RT->Root[j], object,i);
+		}
+		flag = flag * _CompareSet(answers[i], object);
+
+		delete object;
+	}
+	return flag;
+}
+//Deprecated
+bool _CompareSet(set<int>* answer, set<int>* object){
+	bool isSame = true;
+	set<int>::iterator it, it1, it2;
+	if (answer->size() != object->size()){
+		if (isVerifyAnswer) {
+			cout << "Answer set Size = " << answer->size() << endl;
+			for (it=answer->begin(); it!=answer->end(); ++it)
+				cout<<*it<<" ";
+			cout << "\nObject set Size = " << object->size() << endl;
+			for (it = object->begin(); it != object->end(); ++it)
+				cout << *it << " ";
+			cout<<endl;
+		}
+		isSame = false;
+	}
+	for(it1=answer->begin() , it2 = object->begin(); it1 !=answer->end() , it2 != object->end() ; ++it1 , ++it2){
+		if(*it1 != *it2)
+			isSame = false;
+	}
+	return isSame;
+}

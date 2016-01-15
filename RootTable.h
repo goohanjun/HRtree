@@ -21,8 +21,6 @@ public:
 
 	HNode* Root[MAX_ROOT];
 	int numRoot;
-
-	//int currentTime;
 };
 
 

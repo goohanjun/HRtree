@@ -12,11 +12,7 @@
 
 
 
-/*
- * Check the order of BP
- * If it is not in the form of [Min Min Max Max t_start t_end]
- * return false
- */
+// Check the order of BP
 bool _isMinMaxCorrect(HNode* HNode) {
 	bool flag = true;
 	//For BP in the Node

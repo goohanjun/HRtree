@@ -19,24 +19,25 @@ int CommandDelete(double* key, int data, int dlen, RootTable* RootTable);
 int CommandSearch(HNode* root, double* key, int data, int dlen, RootTable* RootTable);
 void CommandTimeStamp(RootTable *RT, double *key,int data,set<int>* ans, int status);
 void CommandTimeIntv(RootTable *RT, double *key,int data,set<int>* ans, int status);
-/*
- * Verification
- */
 
+
+//Search
+void _SearchObject(HNode *Node, set<int>* object, int currentTime);
+void _SearchObject(HNode *Node, double *key, set<int>* object, int currentTime);
+
+//Verification
 //Verify the structure of the Tree.
 bool CommandVerifyTree(RootTable *RT, int currentTime);
 bool VerifyRootNode(HNode* HNode, int currentTime);
 bool Verify(HNode* HNode, int currentTime);
 
-//Verify the answer set with object id.
-bool CommandVerifyAnswer(RootTable *RT, set<int>* answers[],int ElapsedTime);
-void _SearchObject(HNode *Node, set<int>* object, int currentTime);
-void _SearchObject(HNode *Node, double *key, set<int>* object, int currentTime);
-bool _CompareSet(set<int>* answer, set<int>* object);
-
-
+//Print
 bool CommandVerify(RootTable *RT, set<int>* answers[],int ElapsedTime);
 void CommandDump(HNode* HNode);
 void CommandView(RootTable *RT);
 void CommandPrint(HNode* HNode);
+
+//Deprecated
+bool _CompareSet(set<int>* answer, set<int>* object);
+bool CommandVerifyAnswer(RootTable *RT, set<int>* answers[],int ElapsedTime);
 #endif /* SRC_COMMAND_H_ */
