@@ -21,8 +21,8 @@ int CommandInsert(double* key, int data, int dlen, RootTable* RT) {
 			RT->Root[RT->numRoot]->isRoot = true;
 			RT->Root[RT->numRoot]->bp[4] = key[4];
 			RT->numRoot++;
-			Insert(RT->Root[RT->numRoot-1], key, data, sizeof(int), RT);
 			//Insert the object into new Root
+			Insert(RT->Root[RT->numRoot-1], key, data, sizeof(int), RT);
 		}
 	}
 	return 1;
@@ -37,56 +37,87 @@ int CommandDelete(double* key, int data, int dlen, RootTable* RT) {
 	}
 }
 
-void CommandTimeStamp(RootTable *RT, double *key,int data,set<int>* ans, int status) {
-	if (status == 0) {
-		// status == 0
-		// Search all of overlapped region
-		double queryTime = key[4]; //||key[5]
+void CommandSearch(RootTable *RT, double *key,int data,set<int>* ans, int areaCondition, int timeCondition) {
+	double queryStartTime = key[4];
+	double queryEndTime = key[5];
+	// Search all of overlapped region
+	for (int i = 0; i < RT->numRoot; i++) {
+		if ((queryStartTime <= RT->Root[i]->bp[4] && RT->Root[i]->bp[4] < queryEndTime ) ||
+			(queryStartTime <= RT->Root[i]->bp[5] && RT->Root[i]->bp[5] < queryEndTime )) {
+			if (areaCondition == 0)
+				_SearchOverlappedObject(RT->Root[i], key, ans, timeCondition);
+			else //areaCondition == 1
+				_SearchIncludedObject(RT->Root[i], key, ans, timeCondition);
+		}
+		else if(RT->Root[i]->bp[4] <= queryStartTime && queryEndTime <= RT->Root[i]->bp[5]){
+			if (areaCondition == 0)
+				_SearchOverlappedObject(RT->Root[i], key, ans, timeCondition);
+			else //areaCondition == 1
+				_SearchIncludedObject(RT->Root[i], key, ans, timeCondition);
+		}
+	}
+}
 
-		for (int i = 0; i < RT->numRoot; i++) {
-			if (RT->Root[i]->bp[4] <= queryTime	&& queryTime < RT->Root[i]->bp[5]) {
-				_SearchObject(RT->Root[i], key, ans, queryTime);
+//Search overlapped Object in key region
+void _SearchOverlappedObject(HNode *Node, double *key, set<int>* object, int timeCondition) {
+	int Time = key[4];
+	hr_rect keyBP;
+	keyBP.copyRect(key);
+	for (int i = 0; i < Node->numEntry; i++) {
+		if(timeCondition == 0 ){ //Overlap
+			if ( keyBP.isOverlap(Node->entries[i].bp) && keyBP.isTimeOverlap(Node->entries[i].bp)) {
+				if (Node->level == 1){
+					object->insert(Node->entries[i].data);
+				}
+				else
+					_SearchOverlappedObject(Node->entries[i].child, key, object, timeCondition);
 			}
 		}
-	} else {
-		// status == 1
-		// Search only included region
-		double queryTime = key[4]; //||key[5]
+		else{ //Include
+			if ( keyBP.isOverlap(Node->entries[i].bp) && keyBP.isTimeIncluded(Node->entries[i].bp)) {
+				if (Node->level == 1){
+					object->insert(Node->entries[i].data);
+				}
+				else
+					_SearchOverlappedObject(Node->entries[i].child, key, object, timeCondition);
+			}
+		}
+	}
+	keyBP.dealloc();
+}
 
-		for (int i = 0; i < RT->numRoot; i++) {
-			if (RT->Root[i]->bp[4] <= queryTime	&& queryTime < RT->Root[i]->bp[5]) {
-				_SearchObject(RT->Root[i], key, ans, queryTime);
+//Search included Object in key region
+void _SearchIncludedObject(HNode *Node, double *key, set<int>* object, int timeCondition) {
+	int Time = key[4];
+	hr_rect keyBP;
+	keyBP.copyRect(key);
+	for (int i = 0; i < Node->numEntry; i++) {
+		if ( keyBP.isIncluded(Node->entries[i].bp)  ) {
+			if (Node->level == 1){
+				object->insert(Node->entries[i].data);
+			}
+			else
+				_SearchIncludedObject(Node->entries[i].child, key, object, Time);
+		}
+	}
+	keyBP.dealloc();
+}
 
+// Timestamp Query to all region
+void _SearchAllObject(HNode *Node, set<int>* object, int currentTime) {
+	for (int i = 0; i < Node->numEntry; i++) {
+		if ( Node->entries[i].bp[4] <= currentTime	&& currentTime < Node->entries[i].bp[5] ) {
+			if (Node->level == 1) {
+				object->insert(Node->entries[i].data);
+			} else{
+				_SearchAllObject(Node->entries[i].child, object, currentTime);
 			}
 		}
 	}
 }
 
-void CommandTimeIntv(RootTable *RT, double *key,int data,set<int>* ans, int status) {
-	if(status==0){
-		// status == 0
-		// Search all of overlapped region
-		double queryTime = key[4]; //||key[5]
-		for (int i = 0; i < RT->numRoot; i++) {
-			if (RT->Root[i]->bp[4] <= queryTime	&& queryTime < RT->Root[i]->bp[5]) {
-				_SearchObject(RT->Root[i], key, ans, queryTime);
-
-			}
-		}
-	}
-	else{
-		// status == 1
-		// Search only included region
-		double queryTime = key[4]; //||key[5]
-		for (int i = 0; i < RT->numRoot; i++) {
-			if (RT->Root[i]->bp[4] <= queryTime	&& queryTime < RT->Root[i]->bp[5]) {
-				_SearchObject(RT->Root[i], key, ans, queryTime);
-			}
-		}
-	}
-}
-
-void _SearchObject(HNode *Node, double *key, set<int>* object, int Time) { // Timestamp Query to all region
+// Timestamp Query to all region
+void _SearchObject(HNode *Node, double *key, set<int>* object, int Time) {
 	hr_rect keyBP;
 	keyBP.copyRect(key);
 	for (int i = 0; i < Node->numEntry; i++) {
@@ -100,18 +131,6 @@ void _SearchObject(HNode *Node, double *key, set<int>* object, int Time) { // Ti
 		}
 	}
 	keyBP.dealloc();
-}
-
-void _SearchObject(HNode *Node, set<int>* object, int currentTime) { // Timestamp Query to all region
-	for (int i = 0; i < Node->numEntry; i++) {
-		if ( Node->entries[i].bp[4] <= currentTime	&& currentTime < Node->entries[i].bp[5] ) {
-			if (Node->level == 1) {
-				object->insert(Node->entries[i].data);
-			} else{
-				_SearchObject(Node->entries[i].child, object, currentTime);
-			}
-		}
-	}
 }
 
 //Debug
@@ -278,7 +297,7 @@ bool CommandVerifyAnswer(RootTable *RT, set<int>* answers[], int ElapsedTime){
 		set<int> *object = new set<int>;
 		for (int j = 0; j < RT->numRoot; j++) {
 			if (i >= RT->Root[j]->bp[4])
-				_SearchObject(RT->Root[j], object,i);
+				_SearchAllObject(RT->Root[j], object,i);
 		}
 		flag = flag * _CompareSet(answers[i], object);
 

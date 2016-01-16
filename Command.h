@@ -16,14 +16,13 @@ using namespace std;
 
 int CommandInsert(double* key, int data, int dlen, RootTable* RootTable);
 int CommandDelete(double* key, int data, int dlen, RootTable* RootTable);
-int CommandSearch(HNode* root, double* key, int data, int dlen, RootTable* RootTable);
-void CommandTimeStamp(RootTable *RT, double *key,int data,set<int>* ans, int status);
-void CommandTimeIntv(RootTable *RT, double *key,int data,set<int>* ans, int status);
-
+void CommandSearch(RootTable *RT, double *key,int data,set<int>* ans, int areaCondition, int timeCondition);
 
 //Search
-void _SearchObject(HNode *Node, set<int>* object, int currentTime);
+void _SearchAllObject(HNode *Node, set<int>* object, int currentTime);
 void _SearchObject(HNode *Node, double *key, set<int>* object, int currentTime);
+void _SearchOverlappedObject(HNode *Node, double *key, set<int>* object, int currentTime);
+void _SearchIncludedObject(HNode *Node, double *key, set<int>* object, int currentTime);
 
 //Verification
 //Verify the structure of the Tree.

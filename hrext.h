@@ -51,6 +51,7 @@ public:
 	double & lo( int d );
 	double & hi( int d );
 	bool isTimeOverlap(double *bp);
+	bool isTimeIncluded(double *bp);
 private:
 };
 

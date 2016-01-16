@@ -283,6 +283,18 @@ bool hr_rect::isTimeOverlap(double *bp) {
 	return flag;
 }
 
+bool hr_rect::isTimeIncluded(double *bp) {
+	//Rect == key (Query)
+	//bp = entry's bp
+	double t_start =bp[4];
+	double t_end =bp[5];
+	bool flag = false;
+	if( coord[4] <= t_start && t_end <= coord[5]  ){
+		flag = true;
+	}
+	return flag;
+}
+
 bool hr_rect::isEqual(hr_rect *rect){
 	bool flag = true;
 	for(int i = 0;i <dim*2-2;i++){ // Compare BP only. not time
