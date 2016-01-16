@@ -60,7 +60,6 @@ void CommandSearch(RootTable *RT, double *key,int data,set<int>* ans, int areaCo
 
 //Search overlapped Object in key region
 void _SearchOverlappedObject(HNode *Node, double *key, set<int>* object, int timeCondition) {
-	int Time = key[4];
 	hr_rect keyBP;
 	keyBP.copyRect(key);
 	for (int i = 0; i < Node->numEntry; i++) {

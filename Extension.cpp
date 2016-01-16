@@ -6,7 +6,9 @@
  */
 
 #include "Extension.h"
+
 #include <cassert>
+
 using namespace std;
 
 int Insert(HNode* root, double* key, int data, int dlen, RootTable* RT) {
@@ -303,7 +305,7 @@ int Search(HNode* self, double* key, int data, int dlen, HNode* Root[],
 }
 
 //Deletion
-bool _FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key, int data,
+bool _FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key, int numID,
 		double currentTime) {
 	// Reached to Leaf Node
 	if (Node->level == 1) {
@@ -311,7 +313,8 @@ bool _FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key, int data,
 		int numAlive = 0;
 		bool isExist = false;
 		for (int i = 0; i < Node->numEntry; i++) {
-			if (Node->entries[i].data == data) {
+			//Deprecated
+			if (Node->entries[i].data == numID) {
 				index = i;
 				isExist = true;
 			} else if (Node->entries[i].bp[5] == DBL_MAX) // Alive Entry
@@ -375,7 +378,7 @@ bool _FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key, int data,
 	// Non-leaf Nodes
 	for (int i = 0; i < Node->numEntry; i++) {
 		if (Node->entries[i].bp[5] == DBL_MAX	&& keyRect.isIncluded(Node->entries[i].bp)) { // Alive Entry which include key's BP
-			if (_FindLeaf(Node->entries[i].child, leaf, Stack, key, data,	currentTime)) {
+			if (_FindLeaf(Node->entries[i].child, leaf, Stack, key, numID,	currentTime)) {
 				if (Node->entries[i].bp[4] < currentTime && Stack->isChanged[Node->level - 2]) { // Insert new entry e' and close e
 
 					//Debug

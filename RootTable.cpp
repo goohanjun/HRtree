@@ -12,6 +12,8 @@ RootTable::RootTable(){
 	Root[0] = new HNode();
 	Root[0]->isRoot = true;
 	numRoot = 1;
+
+	numObject = 0;
 }
 
 //TODO

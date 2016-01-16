@@ -24,7 +24,6 @@
 #include <iostream>
 #include <string>
 #include <set>
-#include <vector>
 
 using std::cout;
 using std::cerr;
@@ -35,17 +34,6 @@ using std::string;
 using std::atoi;
 using std::set;
 using std::string;
-
-struct item{
-	int id;
-	double bp[dim*2];
-	int t_start;
-	int t_end;
-};
-
-struct itemArray{
-	item items[100];
-};
 
 int main(int argc, char *argv[]){
 
@@ -69,17 +57,13 @@ int main(int argc, char *argv[]){
 	int nObj;
 	fscanf( fin, "%d", &nObj );
 
-	vector< itemArray > itemVector;
-
-
 	set<int> ans;
 	RootTable *RT = new RootTable(); //RT->numRoot = 1 in the beginning
 	RT->Root[0]->bp[5]=DBL_MAX; // First root is alive
 
-
 	double key[6];  /// X_min, Y_min, X_max, Y_max, t_start, t_end
-	int id = 0; // Data
-	int item_id = 0;
+	int id; // Data
+
 	for ( int i=0; i<4; ++i ) fscanf( fin, "%s", buf );
 	while ( fscanf( fin, "%s", buf ) != EOF ) {
 		/*
@@ -94,13 +78,9 @@ int main(int argc, char *argv[]){
 				key[i] = atof(buf);
 			}
 			key[5] = DBL_MAX;
-
-			item newitem = {};
-			newitem.id = id; item_id++;
-			newitem.t_start = key[4];
-			newitem.t_end = key[5]; //DBL_MAX
-
 			CommandInsert(key, id, sizeof(int), RT);
+
+
 			//CommandInsert(key, item_id, sizeof(int), RT);
 			//cout<< id << " is Inserted"<<endl;
 		}
@@ -111,9 +91,11 @@ int main(int argc, char *argv[]){
 		 * Data = Object_ID
 		 */
 		else if ( strcmp( buf, "Delete" ) == 0 ) {
+			//Debug
 			//cout<< id << " is Deleting at "<<key[4]<<endl;
 			if(isPrintDelete)
 				CommandDump(RT->Root[RT->numRoot-1]);
+
 			fscanf( fin, "%d", &id );
 			for ( int i=0; i<4; ++i ) {
 				fscanf( fin, "%s", buf );
@@ -124,6 +106,8 @@ int main(int argc, char *argv[]){
 				//break;
 				cout<<"Deletion failed with"<<id <<endl;
 			}
+
+			//Debug
 			if(isPrintDelete){
 				cout<< id << " is Deleted at "<<key[4]<<endl;
 				CommandDump(RT->Root[RT->numRoot-1]);
@@ -165,12 +149,14 @@ int main(int argc, char *argv[]){
 			}
 		}
 	}
+
 	if (isPrintRootInterval) {
 		for (int i = 0; i < RT->numRoot; i++)
 			cout << "[" << RT->Root[i]->bp[4] << " , " << RT->Root[i]->bp[5]<< "]" << endl;
 	}
+
 	cout<<"Done!"<<endl;
-	fclose(fin);
-	fclose(fout);
+
+	fclose(fin);	fclose(fout);
 	return 0;
 }

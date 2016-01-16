@@ -45,4 +45,5 @@
 //Print
 #define isVerifyAnswer 0
 #define isVerifyTree 0
+
 #endif /* SRC_HR_DEFS_H_ */
