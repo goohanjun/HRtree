@@ -56,7 +56,7 @@ private:
 			double *lkey);
 
 	// Deletion
-	bool _FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key, int data,	double currentTime);
+	bool _FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key, int data,	double currentTime, RootTable* RT);
 	int _TreatOverflow2(HNode* self, stack* Stack, HNode* nNode1, HNode* nNode2,HNode*& outNode1, HNode*& outNode2, int status, RootTable* RT,
 			double tnow);
 	int _TreatUnderflow(HNode* Parent, HNode* self, stack *st, HNode*& Node1, HNode*& Node2, double currentTime, bool isFromParent);

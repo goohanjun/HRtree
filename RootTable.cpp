@@ -25,6 +25,7 @@ RootTable::~RootTable(){
 }
 
 int RootTable::CommandInsert(double* key, int data, int dlen) {
+	// Insertion
 	if (!ext->Insert(Root[numRoot-1], key, data, sizeof(int), this)) {
 		if (numRoot < MAX_ROOT) { //previous Root is deleted. Insert a new alive root
 			cout<<"Main:: Insert a new alive root"<<endl;
@@ -36,7 +37,17 @@ int RootTable::CommandInsert(double* key, int data, int dlen) {
 			ext->Insert(Root[numRoot-1], key, data, sizeof(int), this);
 		}
 	}
+
+	// Make a real object data in items Vector
+	if(numObject %100 ==0){
+		itemArray newitems;
+		itemVector.push_back(newitems);
+	}
+	memcpy( itemVector[numObject/100].items[numObject%100].bp, key, klen);
+	itemVector[numObject/100].items[numObject%100].bp[5]=DBL_MAX;
+	itemVector[numObject/100].items[numObject%100].objectID = data;
 	numObject++;
+
 	return 1;
 }
 
@@ -74,23 +85,34 @@ void RootTable::CommandSearch(double *key,int data, set<int>* ans, int areaCondi
 void RootTable::_SearchOverlappedObject(HNode *Node, double *key, set<int>* object, int timeCondition) {
 	hr_rect keyBP;
 	keyBP.copyRect(key);
+
 	for (int i = 0; i < Node->numEntry; i++) {
-		if(timeCondition == 0 ){ //Overlap
-			if ( keyBP.isOverlap(Node->entries[i].bp) && keyBP.isTimeOverlap(Node->entries[i].bp)) {
-				if (Node->level == 1){
-					object->insert(Node->entries[i].data);
+		if(timeCondition == 0 ){ // TimeCondition  =  Overlap
+			if(Node->level == 1){
+				if ( keyBP.isOverlap(Node->entries[i].bp) && keyBP.isTimeOverlap(Node->entries[i].bp)){
+					int numObject = Node->entries[i].data;
+					object->insert(itemVector[numObject/100].items[numObject%100].objectID);
 				}
-				else
+			}
+			else{
+				if ( keyBP.isOverlap(Node->entries[i].bp) && keyBP.isTimeOverlap(Node->entries[i].bp))
 					_SearchOverlappedObject(Node->entries[i].child, key, object, timeCondition);
 			}
 		}
-		else{ //Include
-			if ( keyBP.isOverlap(Node->entries[i].bp) && keyBP.isTimeIncluded(Node->entries[i].bp)) {
-				if (Node->level == 1){
-					object->insert(Node->entries[i].data);
+		else{ // TimeCondition  =  Include
+			if(Node->level == 1){
+				double actualBP[6];
+				int numObject = Node->entries[i].data;
+				memcpy(actualBP,itemVector[numObject/100].items[numObject%100].bp,klen);
+				if ( keyBP.isOverlap(Node->entries[i].bp) && keyBP.isTimeIncluded(actualBP)){
+					object->insert(itemVector[numObject/100].items[numObject%100].objectID);
 				}
-				else
+			}
+			else{
+				if (keyBP.isOverlap(Node->entries[i].bp) && keyBP.isTimeIncluded(Node->entries[i].bp)) {
 					_SearchOverlappedObject(Node->entries[i].child, key, object, timeCondition);
+				}
+
 			}
 		}
 	}
@@ -99,16 +121,34 @@ void RootTable::_SearchOverlappedObject(HNode *Node, double *key, set<int>* obje
 
 //Search included Object in key region
 void RootTable::_SearchIncludedObject(HNode *Node, double *key, set<int>* object, int timeCondition) {
-	int Time = key[4];
 	hr_rect keyBP;
 	keyBP.copyRect(key);
 	for (int i = 0; i < Node->numEntry; i++) {
-		if ( keyBP.isIncluded(Node->entries[i].bp)  ) {
-			if (Node->level == 1){
-				object->insert(Node->entries[i].data);
+		if(timeCondition == 0 ){ //Overlap
+			if(Node->level == 1){
+				if ( keyBP.isIncluded(Node->entries[i].bp) && keyBP.isTimeOverlap(Node->entries[i].bp)){
+					int numObject = Node->entries[i].data;
+					object->insert(itemVector[numObject/100].items[numObject%100].objectID);
+				}
 			}
-			else
-				_SearchIncludedObject(Node->entries[i].child, key, object, Time);
+			else{
+				if ( keyBP.isIncluded(Node->entries[i].bp) && keyBP.isTimeOverlap(Node->entries[i].bp))
+					_SearchIncludedObject(Node->entries[i].child, key, object, timeCondition);
+			}
+		}
+		else{ //Include
+			if (Node->level == 1){
+				double actualBP[6];
+				int numObject = Node->entries[i].data;
+				memcpy(actualBP,itemVector[numObject/100].items[numObject%100].bp,klen);
+				if ( keyBP.isIncluded(Node->entries[i].bp) && keyBP.isTimeIncluded(actualBP)){
+					object->insert(itemVector[numObject/100].items[numObject%100].objectID);
+				}
+			}
+			else{
+				if ( keyBP.isIncluded(Node->entries[i].bp) && keyBP.isTimeIncluded(Node->entries[i].bp))
+					_SearchIncludedObject(Node->entries[i].child, key, object, timeCondition);
+			}
 		}
 	}
 	keyBP.dealloc();
@@ -119,7 +159,8 @@ void RootTable::_SearchAllObject(HNode *Node, set<int>* object, int currentTime)
 	for (int i = 0; i < Node->numEntry; i++) {
 		if ( Node->entries[i].bp[4] <= currentTime	&& currentTime < Node->entries[i].bp[5] ) {
 			if (Node->level == 1) {
-				object->insert(Node->entries[i].data);
+				int numObject = Node->entries[i].data;
+				object->insert(itemVector[numObject/100].items[numObject%100].objectID);
 			} else{
 				_SearchAllObject(Node->entries[i].child, object, currentTime);
 			}
@@ -134,8 +175,8 @@ void RootTable::_SearchObject(HNode *Node, double *key, set<int>* object, int Ti
 	for (int i = 0; i < Node->numEntry; i++) {
 		if ( (Node->entries[i].bp[4] <= Time)	&& (Time < Node->entries[i].bp[5])  &&	keyBP.isOverlap(Node->entries[i].bp)  ) {
 			if (Node->level == 1){
-				object->insert(Node->entries[i].data);
-				//cout<< Node->entries[i].data <<" is Chosen"<<endl;
+				int numObject = Node->entries[i].data;
+				object->insert(itemVector[numObject/100].items[numObject%100].objectID);
 			}
 			else
 				_SearchObject(Node->entries[i].child, key, object, Time);

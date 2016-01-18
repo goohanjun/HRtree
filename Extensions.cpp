@@ -83,7 +83,7 @@ int Extensions::Delete(HNode* root, double* key, int data, int dlen, RootTable* 
 		cout << "This root is already closed. " << endl;
 		return 0;
 	}
-	if (!_FindLeaf(root, leaf, Stack, key, data, currentTime)) { //Find a leaf node to delete the object from
+	if (!_FindLeaf(root, leaf, Stack, key, data, currentTime,RT)) { //Find a leaf node to delete the object from
 		cout << "Deletion Failed. No such object in the tree" << endl;
 		return 0;
 	}
@@ -353,15 +353,19 @@ int Extensions::Search(HNode* self, double* key, int data, int dlen, HNode* Root
 
 //Deletion
 bool Extensions::_FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key, int numID,
-		double currentTime) {
+		double currentTime, RootTable* RT) {
 	// Reached to Leaf Node
 	if (Node->level == 1) {
 		int index = 0;
 		int numAlive = 0;
 		bool isExist = false;
 		for (int i = 0; i < Node->numEntry; i++) {
-			//Deprecated
-			if (Node->entries[i].data == numID) {
+
+			int numObject = Node->entries[i].data;
+			int objectID = RT->itemVector[numObject/100].items[numObject%100].objectID;
+
+			if (objectID == numID) {
+				RT->itemVector[numID/100].items[numID%100].bp[5] = currentTime;
 				index = i;
 				isExist = true;
 			} else if (Node->entries[i].bp[5] == DBL_MAX) // Alive Entry
@@ -431,7 +435,7 @@ bool Extensions::_FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key,
 		if (Node->entries[i].bp[5] == DBL_MAX
 				&& keyRect.isIncluded(Node->entries[i].bp)) { // Alive Entry which include key's BP
 			if (_FindLeaf(Node->entries[i].child, leaf, Stack, key, numID,
-					currentTime)) {
+					currentTime, RT)) {
 				if (Node->entries[i].bp[4] < currentTime
 						&& Stack->isChanged[Node->level - 2]) { // Insert new entry e' and close e
 

@@ -11,6 +11,7 @@
 #include "HNode.h"
 #include "HDefs.h"
 #include "Extensions.h"
+#include <vector>
 
 #include <set>
 
@@ -19,12 +20,21 @@ class Extensions;
 
 class RootTable {
 
+	struct item{
+		double bp[6];
+		int objectID;
+	};
+
+	struct itemArray {
+		item items[100];
+	};
+
 public:
 	HNode* Root[MAX_ROOT];
 	Extensions* ext;
 	int numRoot;
 	int numObject;
-
+	vector<itemArray> itemVector;
 
 	RootTable();
 	virtual ~RootTable();
