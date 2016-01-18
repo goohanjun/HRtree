@@ -198,18 +198,108 @@ bool HNode::_deleteEntry(double* key, int data) {
 	return flag;
 }
 
-Entry::Entry() {
-	// TODO Auto-generated constructor stub
-	int i;
-	for(i=0;i<dim*2;i++){
-		bp[i]=0.0;
+/*
+ * !!!! Verification !!!!
+ */
+
+
+// Check the order of BP
+bool HNode::_isMinMaxCorrect() {
+	bool flag = true;
+	//For BP in the Node
+	if (bp[0] > bp[2]) // if X_min > X_max, then it is wrong
+		flag = false;
+	if (bp[1] >  bp[1]) // if Y_min > Y_max, then it is wrong
+			flag = false;
+	if ( bp[4] >=  bp[5]) // if t_start >= t_end, then it is wrong
+			flag = false;
+
+	//For BP in the entry
+	for (int i = 0; i <  numEntry; i++) {
+		if ( entries[i].bp[0] >  entries[i].bp[2]) // if X_min > X_max, then it is wrong
+			flag = false;
+		if ( entries[i].bp[1] >  entries[i].bp[1]) // if Y_min > Y_max, then it is wrong
+				flag = false;
+		if ( entries[i].bp[4] >=  entries[i].bp[5]) // if t_start >= t_end, then it is wrong
+				flag = false;
 	}
-	pos = true;
-	dlen = 0;
-	data= 0;
-	child = 0;
+	return flag;
 }
 
-Entry::~Entry() {
-	// TODO Auto-generated destructor stub
+//Return true it the node is underflow.
+bool HNode::_isUnderflow() {
+	bool flag = true;
+	int numAlive =  _numAlive(DBL_MAX - 1); //tnow = DBL_MAX-1
+	if (0 < numAlive && numAlive <= MaxEntry * UF_Ratio
+			&&  isRoot == false)
+		flag = false;
+	return flag;
 }
+
+//Return false if the node's bp is wrong
+bool HNode::_isAliveBPCorrectNode() {
+	hr_rect Rect,tempRect;
+	Rect.copyRect( bp);
+
+	bool flag = false;
+	for (int i = 0; i <  numEntry; i++) {
+		if(  entries[i].bp[5] == DBL_MAX ){
+			if(flag == false){
+				tempRect.copyRect( entries[i].bp);
+				flag = true;
+			}
+			tempRect.expand( entries[i].bp);
+		}
+	}
+	return Rect.isEqual(&tempRect);
+}
+
+bool HNode::_isDeadBPCorrectNode(double tnow) {
+	hr_rect Rect,tempRect;
+	Rect.copyRect( bp);
+
+	bool flag = false;
+	for (int i = 0; i <  numEntry; i++) {
+		if (flag == false && Rect.isTimeOverlap( entries[i].bp)) {
+			tempRect.copyRect( entries[i].bp);
+			flag = true;
+		}
+		if (Rect.isTimeOverlap( entries[i].bp))
+			tempRect.expand( entries[i].bp);
+	}
+	return Rect.isEqual(&tempRect);
+}
+
+bool HNode::_isAliveBPCorrectEntry(Entry* Entry, double tnow) {
+	hr_rect Rect,tempRect;
+	Rect.copyRect(Entry->bp);
+
+	bool flag = false;
+	for (int i = 0; i < Entry->child->numEntry; i++) {
+		if( Entry->child->entries[i].bp[5] == DBL_MAX ){
+			if(flag == false){
+				tempRect.copyRect(Entry->child->entries[i].bp);
+				flag = true;
+			}
+			tempRect.expand(Entry->child->entries[i].bp);
+		}
+	}
+	return Rect.isEqual(&tempRect);
+}
+
+bool HNode::_isDeadBPCorrectEntry(Entry* Entry, double tnow) {
+	hr_rect Rect, tempRect;
+	Rect.copyRect(Entry->bp);
+	bool flag = false;
+	for (int i = 0; i < Entry->child->numEntry; i++) {
+		if (flag == false && Rect.isTimeOverlap(Entry->child->entries[i].bp)) {
+			tempRect.copyRect(Entry->child->entries[i].bp);
+			flag = true;
+		}
+		if (Rect.isTimeOverlap(Entry->child->entries[i].bp)) {
+			tempRect.expand(Entry->child->entries[i].bp);
+		}
+	}
+	return Rect.isEqual(&tempRect);
+}
+

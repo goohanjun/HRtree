@@ -17,7 +17,7 @@
 #define MAX_DEPTH_SIZE 50 // Max depth of tree
 #define MAX_ROOT 1000 // Max number of root nodes
 #define MAX_STACK_SIZE 50 // Max length of stack to save path from root to leaf
-
+#define MaxEntry 6
 #define SVO_Ratio 0.8 // Strong Version Overflow Condition
 #define UF_Ratio 0.35 // Underflow Condition
 #define minSplitRatio 0.35

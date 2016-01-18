@@ -4,15 +4,15 @@
  *  Created on: Jan 5, 2016
  *      Author: hanjunkoo
  */
-
 #ifndef SRC_PCURSOR_H_
 #define SRC_PCURSOR_H_
 
-#include "HDefs.h"
 #include "HNode.h"
+#include "Entry.h"
+#include "HDefs.h"
+
 #include <cstring>
 #include <iostream>
-class Entry;
 
 class pCursor {
 public:
@@ -26,10 +26,8 @@ public:
 	bool InsertEntry(HNode *nNode);
 	bool InsertEntry(Entry *nEntry);
 	int numAliveEntry();
-
 	void printCursor();
 private:
-
 };
 
 

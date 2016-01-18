@@ -11,23 +11,11 @@
 #include "HDefs.h"
 #include "stack.h"
 #include "RootTable.h"
+#include "Entry.h"
+
 
 class HNode;
 class RootTable;
-
-class Entry {
-public:
-	Entry();
-	virtual ~Entry();
-
-	double bp[dim*2];
-	bool pos;
-	HNode* child;
-	int data;
-	int dlen;
-};
-
-const int MaxEntry = (PAGE_SIZE - sizeof(double)*dim*2 - sizeof(bool) - sizeof(int)*2 ) / (sizeof(Entry));
 
 class HNode {
 public:
@@ -50,6 +38,16 @@ public:
 	int _numAlive(double tnow);
 	int _numAlive();
 	bool _keyAlive(double* key, double tnow);
+
+
+	bool _isMinMaxCorrect();
+	bool _isUnderflow();
+	bool _isAliveBPCorrectNode();
+	bool _isDeadBPCorrectNode(double tnow);
+	bool _isAliveBPCorrectEntry(Entry* Entry, double tnow);
+	bool _isDeadBPCorrectEntry(Entry* Entry, double tnow);
+
+
 };
 
 #endif /* SRC_HNODE_H_ */

@@ -48,11 +48,13 @@ public:
 	double span();
 	double margin();
 	double dist(hr_rect *j);
-	double & lo( int d );
-	double & hi( int d );
+
 	bool isTimeOverlap(double *bp);
 	bool isTimeIncluded(double *bp);
+
 private:
+	double & lo( int d );
+	double & hi( int d );
 };
 
 double findPen_over(hr_rect *j, hr_rect *k);

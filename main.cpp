@@ -10,8 +10,6 @@
  *
  * =============================================================================
  */
-
-#include "Command.h"
 #include "RootTable.h"
 
 #include <stdio.h>
@@ -28,8 +26,6 @@
 using std::cout;
 using std::cerr;
 using std::endl;
-using std::ifstream;
-using std::ofstream;
 using std::string;
 using std::atoi;
 using std::set;
@@ -37,7 +33,7 @@ using std::string;
 
 int main(int argc, char *argv[]){
 
-	/*
+
 	if(argc !=2) {
 		cout<<"Error : No input\n";
 		exit(1);
@@ -47,13 +43,13 @@ int main(int argc, char *argv[]){
 	sprintf( buf, "%s", argv[1] );
 	sprintf( buf, "result.out" );
 	FILE *fout = fopen( buf, "w" );
-	*/
+	/*
 
 	char buf[1024];
 	FILE *fin = fopen( "input_3", "r" );
 	//FILE *fin = fopen( "input_3D", "r" );
 	FILE *fout = fopen( "result.out", "w" );
-
+	*/
 	int nObj;
 	fscanf( fin, "%d", &nObj );
 
@@ -78,8 +74,7 @@ int main(int argc, char *argv[]){
 				key[i] = atof(buf);
 			}
 			key[5] = DBL_MAX;
-			CommandInsert(key, id, sizeof(int), RT);
-
+			RT->CommandInsert(key, id, sizeof(int));
 
 			//CommandInsert(key, item_id, sizeof(int), RT);
 			//cout<< id << " is Inserted"<<endl;
@@ -94,14 +89,14 @@ int main(int argc, char *argv[]){
 			//Debug
 			//cout<< id << " is Deleting at "<<key[4]<<endl;
 			if(isPrintDelete)
-				CommandDump(RT->Root[RT->numRoot-1]);
+				RT->CommandViewLast();
 
 			fscanf( fin, "%d", &id );
 			for ( int i=0; i<4; ++i ) {
 				fscanf( fin, "%s", buf );
 				key[i] = atof(buf);
 			}
-			if (! CommandDelete( key, id, sizeof(int), RT)){
+			if (! RT->CommandDelete( key, id, sizeof(int))){
 				//CommandDump(RT->Root[RT->numRoot-2]);
 				//break;
 				cout<<"Deletion failed with"<<id <<endl;
@@ -110,7 +105,7 @@ int main(int argc, char *argv[]){
 			//Debug
 			if(isPrintDelete){
 				cout<< id << " is Deleted at "<<key[4]<<endl;
-				CommandDump(RT->Root[RT->numRoot-1]);
+				RT->CommandViewLast();
 			}
 		}
 
@@ -123,9 +118,9 @@ int main(int argc, char *argv[]){
 			fscanf( fin, "%s", buf );
 			key[4] = atoi(buf);
 			fscanf( fin, "%s", buf ); // te = ts + 1
-			key[5] = key[4]; // Time stamp query
+			key[5] = key[4] +1; // Time stamp query
 
-			CommandSearch(RT, key, id, &ans, 0, 0);
+			RT->CommandSearch(key, id, &ans, 0, 0);
 
 			// Write a result
 			for ( set<int>::iterator itr = ans.begin(); itr != ans.end(); ++itr ) {
@@ -141,15 +136,14 @@ int main(int argc, char *argv[]){
 			break;
 		}
 		if (isVerifyTree) {
-			if (!CommandVerifyTree(RT, (int) key[4])) {
+			if (!RT->CommandVerifyTree((int) key[4])) {
 				cout << "Verification Failed" << endl;
-				CommandDump(RT->Root[RT->numRoot-1]);
-				//CommandView(RT);
+				RT->CommandViewLast();
 				break;
 			}
 		}
 	}
-
+	//RT->CommandView();
 	if (isPrintRootInterval) {
 		for (int i = 0; i < RT->numRoot; i++)
 			cout << "[" << RT->Root[i]->bp[4] << " , " << RT->Root[i]->bp[5]<< "]" << endl;
