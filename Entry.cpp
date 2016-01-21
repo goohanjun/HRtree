@@ -15,7 +15,6 @@ Entry::Entry() {
 		bp[i]=0.0;
 	}
 	pos = true;
-	dlen = 0;
 	data= 0;
 	child = 0;
 }

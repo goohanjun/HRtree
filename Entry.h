@@ -21,7 +21,6 @@ public:
 	bool pos;
 	HNode* child;
 	int data;
-	int dlen;
 };
 
 #endif /* SRC_ENTRY_H_ */

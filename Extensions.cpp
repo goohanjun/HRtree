@@ -46,13 +46,11 @@ int Extensions::Insert(HNode* root, double* key, int data, int dlen, RootTable* 
 	// Insert object in a leaf node
 	memcpy(&leaf->entries[leaf->numEntry].data, &data, dlen);
 	memcpy(leaf->entries[leaf->numEntry].bp, key, klen);
-	leaf->entries[leaf->numEntry].dlen = dlen;
 	leaf->numEntry++;
 
 	int tempStatus = 0;
 	if (leaf->isRoot == true) {
-		status = _TreatOverflow(leaf, Stack, nNode1, nNode2, oNode1, oNode2,
-				tempStatus, RT, tnow);
+		status = _TreatOverflow(leaf, Stack, nNode1, nNode2, oNode1, oNode2, tempStatus, RT, tnow);
 		Stack->curr--;
 		nNode1 = oNode1;
 		nNode2 = oNode2;
@@ -365,7 +363,7 @@ bool Extensions::_FindLeaf(HNode* Node, HNode *&leaf, stack *Stack, double* key,
 			int objectID = RT->itemVector[numObject/100].items[numObject%100].objectID;
 
 			if (objectID == numID) {
-				RT->itemVector[numID/100].items[numID%100].bp[5] = currentTime;
+				RT->itemVector[numObject/100].items[numObject%100].bp[5] = currentTime;
 				index = i;
 				isExist = true;
 			} else if (Node->entries[i].bp[5] == DBL_MAX) // Alive Entry
