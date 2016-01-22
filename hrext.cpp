@@ -186,12 +186,12 @@ bool hr_rect::isOverlap(double *key) {
 	bool isOverX = false, isOverY = false;
 	if (coord[0] <= key[0] && key[0] < coord[2])
 		isOverX = true;
-	if (key[0] <= coord[0] && coord[0] < key[2])
+	else if (key[0] <= coord[0] && coord[0] < key[2])
 		isOverX = true;
 
 	if (coord[1] <= key[1] && key[1] < coord[3])
 		isOverY = true;
-	if (key[1] <= coord[1] && coord[1] < key[3])
+	else if (key[1] <= coord[1] && coord[1] < key[3])
 		isOverY = true;
 
 	if( isOverX == true && isOverY == true)
@@ -273,14 +273,10 @@ void hr_rect::copyRect(double *key) {
 }
 
 bool hr_rect::isTimeOverlap(double *bp) {
-	double t_start =bp[4];
-	double t_end =bp[5];
-	bool flag;
-	if(t_end <= coord[4] || t_start >= coord[5])
-		flag = false;
+	if(bp[5] <= coord[4] || bp[4]>= coord[5])
+		return false;
 	else
-		flag = true;
-	return flag;
+		return true;
 }
 
 bool hr_rect::isTimeIncluded(double *bp) {

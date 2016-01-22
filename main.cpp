@@ -197,11 +197,8 @@ int main(int argc, char *argv[]){
 			cout << "[" << RT->Root[i]->bp[4] << " , " << RT->Root[i]->bp[5]<< "]" << endl;
 	}
 
-	cout<<"Insertion    = "<<tInsert<<endl;
-	cout<<"Deletion     = "<<tDelete<<endl;
-	cout<<"Search Intv  = "<<tSearchIntv<<endl;
-	cout<<"Search Stamp = "<<tSearchStamp<<endl;
-	cout<<"Done!"<<endl;
+
+	cout<<"     "<<tInsert<<"     "<<tDelete<<"     "<<tSearchStamp<<"     "<<tSearchIntv<<endl;
 
 	fclose(fin);	fclose(fout);
 	return 0;

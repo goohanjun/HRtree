@@ -15,7 +15,7 @@
 #define DBL_MAX 1.7976931348623158e+308 // Use it to show inserted object is not deleted.
 
 #define MAX_DEPTH_SIZE 50 // Max depth of tree
-#define MAX_ROOT 1000 // Max number of root nodes
+#define MAX_ROOT 10000 // Max number of root nodes
 #define MAX_STACK_SIZE 50 // Max length of stack to save path from root to leaf
 #define MaxEntry 10 //  default = 10
 #define SVO_Ratio 0.85 // Strong Version Overflow Condition
