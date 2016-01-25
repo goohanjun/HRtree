@@ -43,9 +43,6 @@ int main(int argc, char *argv[]){
 	double tInsert=0, tDelete=0, tSearchStamp=0, tSearchIntv=0;
 	struct timeval ts, te;
 
-
-
-
 	if(argc !=2) {
 		cout<<"Error : No input\n";
 		exit(1);

@@ -60,25 +60,18 @@ int RootTable::CommandDelete(double* key, int data, int dlen) {
 	}
 }
 
-
-/*
-	Search 를 중복 방문 없이 구현합시다!
-
-
-*/
-
 void RootTable::CommandSearch(double *key,int data, set<int>* ans, int areaCondition, int timeCondition) {
 	hr_rect keyBP;
 	keyBP.copyRect(key);
 	set<HNode*> visitedNode;
-	set<int> visitedLeaf;
+
 	// Search all of overlapped region
 	for (int i = 0; i < numRoot; i++) {
 		if( keyBP.isTimeOverlap(Root[i]->bp)){
 			if (areaCondition == 0)
-				_SearchOverlappedObject(Root[i], key, &visitedNode, &visitedLeaf, ans, timeCondition);
+				_SearchOverlappedObject(Root[i], key, &visitedNode, ans, timeCondition);
 			else //areaCondition == 1
-				_SearchIncludedObject(Root[i], key, &visitedNode, &visitedLeaf, ans, timeCondition);
+				_SearchIncludedObject(Root[i], key, &visitedNode,  ans, timeCondition);
 		}
 	}
 	keyBP.dealloc();
@@ -87,10 +80,10 @@ void RootTable::CommandSearch(double *key,int data, set<int>* ans, int areaCondi
 }
 
 //Search overlapped Object in key region
-void RootTable::_SearchOverlappedObject(HNode *Node, double *key, set<HNode*>* visitedNode, set<int>* visitedLeaf,set<int>* object, int timeCondition) {
+void RootTable::_SearchOverlappedObject(HNode *Node, double *key, set<HNode*>* visitedNode,set<int>* object, int timeCondition) {
 
 	set<HNode*>::iterator i = visitedNode->find(Node);
-	set<int>::iterator j;
+
 	if(i== visitedNode->end()){ // Not in a set
 		hr_rect keyBP;
 		keyBP.copyRect(key);
@@ -99,37 +92,31 @@ void RootTable::_SearchOverlappedObject(HNode *Node, double *key, set<HNode*>* v
 				if(Node->level == 1){
 
 					int data = Node->entries[i].data;
-					j = visitedLeaf->find(data);
 
-					if(j ==visitedLeaf->end()){ // Not in a set
-						visitedLeaf->insert(data);
 						if ( keyBP.isOverlap(Node->entries[i].bp) && keyBP.isTimeOverlap(Node->entries[i].bp))
 							object->insert(itemVector[data/100].items[data%100].objectID);
-					}
+
 
 				}
 				else{
 					if ( keyBP.isOverlap(Node->entries[i].bp) && keyBP.isTimeOverlap(Node->entries[i].bp))
-						_SearchOverlappedObject(Node->entries[i].child, key, visitedNode, visitedLeaf, object, timeCondition);
+						_SearchOverlappedObject(Node->entries[i].child, key, visitedNode,  object, timeCondition);
 				}
 			}
 			else{ // TimeCondition  =  Contain (Include)
 				if(Node->level == 1){
 
 					int data = Node->entries[i].data;
-					j = visitedLeaf->find(data);
 
-					if(j == visitedLeaf->end()){ // Not in a set
-						visitedLeaf->insert(data);
 						double actualBP[6];
 						memcpy(actualBP,itemVector[data/100].items[data%100].bp,klen);
 						if ( keyBP.isOverlap(actualBP) && keyBP.isTimeIncluded(actualBP))
 							object->insert(itemVector[data/100].items[data%100].objectID);
-					}
+
 				}
 				else{
 					if (keyBP.isOverlap(Node->entries[i].bp) && keyBP.isTimeOverlap(Node->entries[i].bp)) {
-						_SearchOverlappedObject(Node->entries[i].child, key, visitedNode, visitedLeaf, object, timeCondition);
+						_SearchOverlappedObject(Node->entries[i].child, key, visitedNode, object, timeCondition);
 					}
 				}
 			}
@@ -140,9 +127,8 @@ void RootTable::_SearchOverlappedObject(HNode *Node, double *key, set<HNode*>* v
 }
 
 //Search included Object in key region
-void RootTable::_SearchIncludedObject(HNode *Node, double *key, set<HNode*>* visitedNode,set<int>* visitedLeaf, set<int>* object, int timeCondition) {
+void RootTable::_SearchIncludedObject(HNode *Node, double *key, set<HNode*>* visitedNode, set<int>* object, int timeCondition) {
 	set<HNode*>::iterator i = visitedNode->find(Node);
-	set<int>::iterator j;
 	if(i== visitedNode->end()){ // Not in a set
 		hr_rect keyBP;
 		keyBP.copyRect(key);
@@ -151,35 +137,29 @@ void RootTable::_SearchIncludedObject(HNode *Node, double *key, set<HNode*>* vis
 				if(Node->level == 1){
 
 					int data = Node->entries[i].data;
-					j = visitedLeaf->find(data);
 
-					if(j ==visitedLeaf->end()){ // Not in a set
-						visitedLeaf->insert(data);
 						if ( keyBP.isInclude(Node->entries[i].bp) && keyBP.isTimeOverlap(Node->entries[i].bp))
 							object->insert(itemVector[data/100].items[data%100].objectID);
-					}
+
 				}
 				else{
 					if ( keyBP.isOverlap(Node->entries[i].bp) && keyBP.isTimeOverlap(Node->entries[i].bp))
-						_SearchIncludedObject(Node->entries[i].child, key, visitedNode, visitedLeaf, object, timeCondition);
+						_SearchIncludedObject(Node->entries[i].child, key, visitedNode,  object, timeCondition);
 				}
 			}
 			else{ //Include
 				if (Node->level == 1){
 					int data = Node->entries[i].data;
-					j = visitedLeaf->find(data);
 
-					if(j ==visitedLeaf->end()){ // Not in a set
-						visitedLeaf->insert(data);
 						double actualBP[6];
 						memcpy(actualBP,itemVector[data/100].items[data%100].bp,klen);
 						if ( keyBP.isInclude(Node->entries[i].bp) && keyBP.isTimeIncluded(actualBP))
 							object->insert(itemVector[data/100].items[data%100].objectID);
-					}
+
 				}
 				else{
 					if ( keyBP.isOverlap(Node->entries[i].bp) && keyBP.isTimeOverlap(Node->entries[i].bp))
-						_SearchIncludedObject(Node->entries[i].child, key, visitedNode, visitedLeaf, object, timeCondition);
+						_SearchIncludedObject(Node->entries[i].child, key, visitedNode,  object, timeCondition);
 					}
 			}
 		}

@@ -58,8 +58,8 @@ private:
 	//Search
 	void _SearchAllObject(HNode *Node, set<int>* object, int currentTime);
 	void _SearchObject(HNode *Node, double *key, set<int>* object, int currentTime);
-	void _SearchOverlappedObject(HNode *Node, double *key, set<HNode*>* visitedNode,set<int>* visitedLeaf, set<int>* object, int currentTime);
-	void _SearchIncludedObject(HNode *Node, double *key, set<HNode*>* visitedNode, set<int>* visitedLeaf, set<int>* object, int currentTime);
+	void _SearchOverlappedObject(HNode *Node, double *key, set<HNode*>* visitedNode, set<int>* object, int currentTime);
+	void _SearchIncludedObject(HNode *Node, double *key, set<HNode*>* visitedNode, set<int>* object, int currentTime);
 
 	//Verify
 	bool VerifyRootNode(HNode* HNode, int currentTime);
