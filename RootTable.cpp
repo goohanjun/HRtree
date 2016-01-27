@@ -206,8 +206,6 @@ bool RootTable::CommandVerify(set<int>* answers[],int ElapsedTime) {
 	//Verify the trees after deletion.
 	if (!CommandVerifyTree(ElapsedTime)) {
 		isCorrect = false;
-		if (isVerifyAnswer)
-			cout << "\n\n\nSomething is Wrong in Tree Structure\n\n\n";
 	}
 	return isCorrect;
 }
